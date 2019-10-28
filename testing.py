@@ -33,7 +33,7 @@ START OF CONFIGURATION
 # Testing configuration
 # MUST CONFIGURE !!!
 # Path to IFJ19 compiler executable file
-IFJCOMP_EXECUTABLE = "../IFJ-pytest-old/comp"
+IFJCOMP_EXECUTABLE = "../IFJ/ifj19"
 # If True, only compile the test program and check return code
 COMPILE_ONLY = False
 # If True, only compile and interpret the test program, but do not compare it with python interpretation
@@ -206,7 +206,7 @@ def check_same_output(interpret_info, python_info):
         logging.info("Python error output:\n" + (python_info["stderr"] or "<empty>"))
         logging.info("----")
         logging.info("Interpret error output:\n" + (interpret_info["stderr"] or "<empty>"))
-        logging.info("--------")
+        logging.info("----")
         error = "Python and IFJ interprets have different exit codes. Python: " + str(python_info["exit_code"]) + " IFJ: " + str(interpret_info["exit_code"]) + "."
         logging.error("ERROR:" + error)
         raise RuntimeError(test_id + " - " + error)
@@ -214,11 +214,11 @@ def check_same_output(interpret_info, python_info):
         logging.info("Python error output:\n" + (python_info["stderr"] or "<empty>"))
         logging.info("----")
         logging.info("Interpret error output:\n" + (interpret_info["stderr"] or "<empty>"))
-        logging.info("--------")
+        logging.info("----")
         logging.info("Python output:\n" + (python_info["stdout"] or "<empty>"))
         logging.info("----")
         logging.info("Interpret output:\n" + (interpret_info["stdout"] or "<empty>"))
-        logging.info("--------")
+        logging.info("----")
         error = "Python and IFJ interprets have different outputs."
         logging.error("ERROR:" + error)
         raise RuntimeError(test_id + " - " + error)
@@ -247,12 +247,22 @@ def test_IFJ_project(test_file, comp_code, int_code, program_input):
     compiler_info = run_ifjcomp(test_file_path)
     check_compiler_error(compiler_info, comp_code)
     if COMPILE_ONLY or (comp_code != 0):
+        if COMPILE_ONLY and (comp_code == 0):
+            logging.info("WARNING: This test was not entirely completed, because of the COMPILE_ONLY configuration.")
+            logging.info("         Interpretation and output checks were not run.")
+            logging.info("----")
+        logging.info("SUCCESS")
         return
 
     try:
         interpret_info = run_iclint(compiler_info["stdout"], program_input)
         check_interpret_error(interpret_info, int_code)
         if COMPILE_AND_INTERPRET_ONLY or (int_code != 0):
+            if COMPILE_AND_INTERPRET_ONLY and (int_code == 0):
+                logging.info("WARNING: This test was not entirely completed, because of the COMPILE_AND_INTERPRET_ONLY configuration.")
+                logging.info("         Output checks were not run.")
+                logging.info("----")
+            logging.info("SUCCESS")
             return
 
         python_info = run_python(test_file_path, program_input)
@@ -262,3 +272,4 @@ def test_IFJ_project(test_file, comp_code, int_code, program_input):
         f.write(compiler_info["stdout"])
         f.close()
         raise
+    logging.info("SUCCESS")
