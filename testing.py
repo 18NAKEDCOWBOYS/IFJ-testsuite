@@ -30,6 +30,31 @@ ERR_INT_RUN_STRING = 58
 START OF CONFIGURATION
 """
 
+# Testing configuration
+# MUST CONFIGURE !!!
+# Path to IFJ19 compiler executable file
+IFJCOMP_EXECUTABLE = "../IFJ-pytest-old/comp"
+# If True, only compile the test program and check return code
+COMPILE_ONLY = False
+# If True, only compile and interpret the test program, but do not compare it with python interpretation
+COMPILE_AND_INTERPRET_ONLY = False
+
+#MAY CONFIGURE
+# Path to template file to enable IFJ19 code to be run by python
+IFJ_19_TEMPLATE_FILE ="./ifj19.py"
+# Path to temporaly file to store compiler output 
+TMP_FILE = "./tmp_file"
+# Python interpreter for output comparison
+PYTHON_INTERPRETER = "python3"
+# Path to ic19 interpreter
+ICL_INTERPRETTER = "./ic19int"
+# Path to folder for incorrect outputs from IFJ 19 compiler
+OUTPUT_FOLDER = "./outputs"
+# Folder with test source files
+TESTS_FOLDER = "./tests"
+# Timeout for each test to cmplete
+SINGLE_TEST_TIMEOUT = 10
+
 # Tests
 # (source_file, compiler_exit_code, interpret_exit_code, program_input)
 tests = [
@@ -42,7 +67,6 @@ tests = [
     ("factorial2.py", ERR_COMP_OK, ERR_INT_OK, "2"),
     ("factorial2.py", ERR_COMP_OK, ERR_INT_OK, "a"),
     ("factorial2.py", ERR_COMP_OK, ERR_INT_OK, None),
-    ("buildin.py", ERR_COMP_OK, ERR_INT_OK, "abcedfgh"),
     ("buildin.py", ERR_COMP_OK, ERR_INT_OK, "abcdefgh\nabcdefgh"),
     ("buildin.py", ERR_COMP_OK, ERR_INT_OK, "abcdefgh"),
     # Lexical analysis tests
@@ -79,7 +103,6 @@ tests = [
     ("badcall3.py", ERR_COMP_SYN, None, None),
     ("emptyprogram.py", ERR_COMP_OK, ERR_INT_OK, None),
     ("badexpr.py", ERR_COMP_SYN, None, None),
-    ("badexpr1.py", ERR_COMP_SYN, None, None),
     ("badexpr2.py", ERR_COMP_SYN, None, None),
     ("badexpr3.py", ERR_COMP_SYN, None, None),
     ("badexpr4.py", ERR_COMP_SYN, None, None),
@@ -117,37 +140,12 @@ tests = [
     # TODO correct programs
 ]
 
-# Testing configuration
-# Path to template file to enable IFJ19 code to be run by python
-IFJ_19_TEMPLATE_FILE ="./ifj19.py"
-# Path to temporaly file to store compiler output 
-TMP_FILE = "./tmp_file"
-# Python interpreter for output comparison
-PYTHON_INTERPRETER = "python3"
-# Path to IFJ19 compiler executable file
-IFJCOMP_EXECUTABLE = "./comp"
-# Path to ic19 interpreter
-ICL_INTERPRETTER = "./ic19int"
-# Path to folder for incorrect outputs from IFJ 19 compiler
-OUTPUT_FOLDER = "./outputs"
-# Folder with test source files
-TESTS_FOLDER = "./tests"
-# Timeout for each test to cmplete
-SINGLE_TEST_TIMEOUT = 10
-# If true, only compile the test program and check return code
-COMPILE_ONLY = False
-# If true, only compile and interpret the test program, but do not compare it with python interpretation
-COMPILE_AND_INTERPRET_ONLY = False
-
 """
 END OF CONFIGURATION
 """
 
-def compile_project():
-    process = subprocess.Popen("make", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    _, capture_err = process.communicate()
-    if process.returncode != 0:
-        raise RuntimeError("Project compilation failed with error code " + str(process.returncode) + ". Output log:\n" + capture_err or "<empty>")
+test_index = 0
+test_id = ""
 
 def run_python(test_source, program_input):
     f = open(IFJ_19_TEMPLATE_FILE, "r")
@@ -189,26 +187,43 @@ def run_iclint(input_data, program_input):
 
 def check_compiler_error(process_info, error_code):
     if process_info["exit_code"] != error_code:
-        logging.error("Error output:\n" + (process_info["stderr"] or "<empty>"))
-        raise RuntimeError("Unexpected exit code of IFJ compiler. Actual:" + str(process_info["exit_code"]) + " Expected: " + str(error_code) + ".")
+        logging.info("Compiler error output:\n" + (process_info["stderr"] or "<empty>"))
+        logging.info("----")
+        error = "Unexpected exit code of IFJ compiler. Actual:" + str(process_info["exit_code"]) + " Expected: " + str(error_code) + "."
+        logging.error("ERROR:" + error)
+        raise RuntimeError(test_id + " - " + error)
 
 def check_interpret_error(process_info, error_code):
     if process_info["exit_code"] != error_code:
-        logging.error("Error output:\n" + (process_info["stderr"] or "<empty>"))
-        raise RuntimeError("Unexpected exit code of IFJ interpreter. Actual:" + str(process_info["exit_code"]) + " Expected: " + str(error_code) + ".")
+        logging.info("Interpret error output:\n" + (process_info["stderr"] or "<empty>"))
+        logging.info("----")
+        error = "Unexpected exit code of IFJ interpreter. Actual:" + str(process_info["exit_code"]) + " Expected: " + str(error_code) + "."
+        logging.error("ERROR:" + error)
+        raise RuntimeError(test_id + " - " + error)
 
 def check_same_output(interpret_info, python_info):
     if interpret_info["exit_code"] != python_info["exit_code"]:
-        logging.error("Python error output:\n" + (python_info["stderr"] or "<empty>"))
-        logging.error("Interpret error output:\n" + (interpret_info["stderr"] or "<empty>"))
-        raise RuntimeError("Python and IFJ interprets have different exit codes. Python: " + str(python_info["exit_code"]) + " IFJ: " + str(interpret_info["exit_code"]) + ".")
+        logging.info("Python error output:\n" + (python_info["stderr"] or "<empty>"))
+        logging.info("----")
+        logging.info("Interpret error output:\n" + (interpret_info["stderr"] or "<empty>"))
+        logging.info("--------")
+        error = "Python and IFJ interprets have different exit codes. Python: " + str(python_info["exit_code"]) + " IFJ: " + str(interpret_info["exit_code"]) + "."
+        logging.error("ERROR:" + error)
+        raise RuntimeError(test_id + " - " + error)
     if interpret_info["stdout"] != python_info["stdout"]:
-        logging.error("Python error output:\n" + (python_info["stderr"] or "<empty>"))
-        logging.error("Interpret error output:\n" + (interpret_info["stderr"] or "<empty>"))
-        raise RuntimeError("Python and IFJ interprets have different outputs.\nPython output:\n" + (python_info["stdout"] or "<empty>") + "\nInterpret output:\n" + (interpret_info["stdout"] or "<empty>"))
+        logging.info("Python error output:\n" + (python_info["stderr"] or "<empty>"))
+        logging.info("----")
+        logging.info("Interpret error output:\n" + (interpret_info["stderr"] or "<empty>"))
+        logging.info("--------")
+        logging.info("Python output:\n" + (python_info["stdout"] or "<empty>"))
+        logging.info("----")
+        logging.info("Interpret output:\n" + (interpret_info["stdout"] or "<empty>"))
+        logging.info("--------")
+        error = "Python and IFJ interprets have different outputs."
+        logging.error("ERROR:" + error)
+        raise RuntimeError(test_id + " - " + error)
 
 def setup_module():
-    compile_project()
     if os.path.exists(OUTPUT_FOLDER):
         shutil.rmtree(OUTPUT_FOLDER)
     os.mkdir(OUTPUT_FOLDER)
@@ -223,6 +238,11 @@ def pytest_addoption(parser):
 @pytest.mark.timeout(SINGLE_TEST_TIMEOUT)
 @pytest.mark.parametrize("test_file,comp_code,int_code,program_input", tests)
 def test_IFJ_project(test_file, comp_code, int_code, program_input):
+    global test_index
+    global test_id
+    test_index = test_index + 1
+    test_id = test_file
+    logging.info("\n********************\nTEST " + str(test_index) + ": " + test_id + "\n********************\n")
     test_file_path = TESTS_FOLDER + "/" + test_file
     compiler_info = run_ifjcomp(test_file_path)
     check_compiler_error(compiler_info, comp_code)
