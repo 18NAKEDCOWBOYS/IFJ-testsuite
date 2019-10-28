@@ -78,7 +78,12 @@ tests = [
     ("badcall2.py", ERR_COMP_SYN, None, None),
     ("badcall3.py", ERR_COMP_SYN, None, None),
     ("emptyprogram.py", ERR_COMP_OK, ERR_INT_OK, None),
-    # TODO syntax of expressions
+    ("badexpr.py", ERR_COMP_SYN, None, None),
+    ("badexpr1.py", ERR_COMP_SYN, None, None),
+    ("badexpr2.py", ERR_COMP_SYN, None, None),
+    ("badexpr3.py", ERR_COMP_SYN, None, None),
+    ("badexpr4.py", ERR_COMP_SYN, None, None),
+    ("badexpr5.py", ERR_COMP_SYN, None, None),
     # Semantics analysis tests
     ("badvar.py", ERR_COMP_SEM_DEF, None, None),
     ("badvar2.py", ERR_COMP_SEM_DEF, None, None),
@@ -88,7 +93,6 @@ tests = [
     ("badfunction10.py", ERR_COMP_SEM_DEF, None, None),
     ("badcall4.py", ERR_COMP_SEM_DEF, None, None),
     ("badcall5.py", ERR_COMP_SEM_DEF, None, None),
-    # TODO semantics of expression
     # Interpret error tests
     ("badtype.py", ERR_COMP_OK, ERR_INT_RUN_OPER, None),
     ("badtype2.py", ERR_COMP_OK, ERR_INT_RUN_OPER, None),
@@ -110,7 +114,6 @@ tests = [
     ("badbuildin6.py", ERR_COMP_OK, ERR_INT_RUN_OPER, None),
     ("badbuildin7.py", ERR_COMP_OK, ERR_INT_RUN_OPER, None),
     ("badbuildin8.py", ERR_COMP_OK, ERR_INT_RUN_STRING, None)
-    # TODO correct usage of the functions
     # TODO correct programs
 ]
 
