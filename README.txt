@@ -16,23 +16,25 @@ Pro instalaci tohoto modulu na serveru merlin použíjte následující příkaz
 Poznámka: Pro spuštění mimo server merlin potřebujete především nainstalovaný python3
 
 Soubory:
-README.md - Tento soubor
-testing.py - Jádro testovacího programu
+README.md    - Tento soubor
+testing.py   - Jádro testovacího programu
+clean.sh     - Vyčistí adresář od veškerých souborů generovaných testy
 run_tests.sh - Ulehčení spouštění testovacího scriptu
-ifj19.py - soubor obsahující funkce pro umožnění interpretace jazyku IFJ19 nativním pythonem
-ic19int - interpret stažený ze stránek předmětu IFJ
-log.txt - Vytvořený testovacím scriptem. Obsahuje detailnější záznam testu.
-          varování: Tento soubor se smaže při každém spuštění testovacího scriptu
+ifj19.py     - soubor obsahující funkce pro umožnění interpretace jazyku IFJ19 nativním pythonem
+ic19int      - interpret stažený ze stránek předmětu IFJ
+log.txt      - Vytvořený testovacím scriptem. Obsahuje detailnější záznam testu.
+               varování: Tento soubor se smaže při každém spuštění testovacího scriptu
 
 Adresáře:
-tests - Zde se nachází zdrojové soubory jednotlivých testů
-outputs - Vytvořený testovacím scriptem. Obsahuje testy přeložené do mezikódu, které selhaly
-          varování: Tento adresář se smaže při každém spuštění testovacího scriptu
+tests        - Zde se nachází zdrojové soubory jednotlivých testů
+outputs      - Vytvořený testovacím scriptem. Obsahuje testy přeložené do mezikódu, které selhaly
+               varování: Tento adresář se smaže při každém spuštění testovacího scriptu
 
 Použití:
 V souboru testing.py upravte konstanty v sekci "CONFIGURATION":
 	V první části se nachází konfigurační konstanty, které jsou podrobněji popsány v kódu.
 	Druhou část není potřeba upravovat pokud pouze testy pouštíte a neupravujete. V této části se nachází seznam testů ve formátu (zdrojový_soubor, návratový_kód_překladače, návratový_kód_interpretru, vstupní_data).
+Návratový kód překladače i interpretru mohou být i seznamy kódů. V takovém případě test selže pokud návratový typ není nalezen ve specifikovaném seznamu. Test pokračuje dalším krokem pouze pokud nenastane chybový kód.
 Před spuštěním testů je potřeba váš projekt přeložit klasicky pomocí příkazu "make". Tento script poté pouští pouze hotový přeložený program.
 Použíjte soubor run_tests.sh pro zapnutí testů (případně upravte parametry modulu pytest podle svého uvážení)
 Výstupem je přehled výsledků jednotlivých testů společně se stručnými zprávami o chybách. Detailnější informace o proběhnutých testech lze nalést v souboru log.txt, který byl scriptem vygenerován.
