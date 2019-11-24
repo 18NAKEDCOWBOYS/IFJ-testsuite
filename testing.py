@@ -34,7 +34,7 @@ START OF CONFIGURATION
 # Testing configuration
 # !!! MUST CONFIGURE !!!
 # Path to IFJ19 compiler executable file
-IFJCOMP_EXECUTABLE = "../IFJ_we_got_this/ifj19"
+IFJCOMP_EXECUTABLE = "../IFJ/ifj19"
 # If True, only compile the test program and check return code
 COMPILE_ONLY = False
 # If True, only compile and interpret the test program, but do not compare it with python interpretation
