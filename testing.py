@@ -143,9 +143,14 @@ tests = [
     ("badbuildin5.py", ERR_COMP_OK, ERR_INT_RUN_OPER,   None),
     ("badbuildin6.py", ERR_COMP_OK, ERR_INT_RUN_OPER,   None),
     ("badbuildin7.py", ERR_COMP_OK, ERR_INT_RUN_OPER,   None),
-    ("badbuildin8.py", ERR_COMP_OK, ERR_INT_RUN_STRING, None)
+    ("badbuildin8.py", ERR_COMP_OK, ERR_INT_RUN_STRING, None),
 
-    # TODO correct programs
+    # Correct programs
+    ("lotofparams.py", ERR_COMP_OK, ERR_INT_OK, None),
+    ("longidentif.py", ERR_COMP_OK, ERR_INT_OK, None),
+    ("geometry.py",    ERR_COMP_OK, ERR_INT_OK, "square\n5\nrectangle\n5.4\n10.4\n\n")
+    ("geometry.py",    ERR_COMP_OK, ERR_INT_OK, "circle\n4.7\ntriangle\n1.1\n2.2\n2.2\n2.8\nsquare\n0\n\n")
+    ("geometry.py",    ERR_COMP_OK, ERR_INT_OK, "abc\n")
 ]
 
 """
