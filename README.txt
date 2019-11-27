@@ -3,6 +3,7 @@ TESTING FRAMEWORK FOR IFJ19
 Autor: Kamil Michl
 
 Upozornění: Autor tohoto repozitáře NERUČÍ za správnost a korektnost vytvořených scriptů ani testů.
+Upozornění: Funkčnost scriptu je ověřena na servru merlin, na jiných strojích se může postup spuštění a instalace lišit.
 
 Tento testovací script je primárně určen pro použití na serveru merlin. Pokud ho chcete používat jinde, pokyny k instalaci a použití se mohou lišit.
 
