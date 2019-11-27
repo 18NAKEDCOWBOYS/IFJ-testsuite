@@ -61,7 +61,7 @@ def print(*args):
       __print(arg, end='')
     if i < length - 1:
       __print(' ', end='')
-  #__print('\n', end='')
+  __print('\n', end='')
   return None
 
 # Zde bude nasledovat program jazyka IFJ19

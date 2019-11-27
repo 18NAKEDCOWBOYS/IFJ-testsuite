@@ -1,161 +1,16 @@
 # Testing framework for IFJ 2019 projects
 
+"""
+SCRIPT FILE - DO NOT EDIT
+"""
+
 import pytest
 import subprocess
 import logging
 import os
 import shutil
 
-# Error constants for compiler
-ERR_COMP_OK = 0
-ERR_COMP_LEX = 1
-ERR_COMP_SYN = 2
-ERR_COMP_SEM_DEF = 3
-ERR_COMP_SEM_TYPE = 4
-ERR_COMP_SEM_PAR = 5
-ERR_COMP_SEM_OTHER = 6
-ERR_COMP_SEM_ZERODIV = 9
-# Error constants for interpreter
-ERR_INT_OK = 0
-ERR_INT_PARAM = 50
-ERR_INT_ANALYZE = 51
-ERR_INT_SEM = 52
-ERR_INT_RUN_OPER = 53
-ERR_INT_RUN_VAR = 54
-ERR_INT_RUN_FRAME = 55
-ERR_INT_RUN_NOVAL = 56
-ERR_INT_RUN_BADVAL = 57
-ERR_INT_RUN_STRING = 58
-
-"""
-START OF CONFIGURATION
-"""
-
-# Testing configuration
-# !!! MUST CONFIGURE !!!
-# Path to IFJ19 compiler executable file
-IFJCOMP_EXECUTABLE = "../IFJ/ifj19"
-# If True, only compile the test program and check return code
-COMPILE_ONLY = False
-# If True, only compile and interpret the test program, but do not compare it with python interpretation
-COMPILE_AND_INTERPRET_ONLY = False
-
-# MAY CONFIGURE
-# Path to template file to enable IFJ19 code to be run by python
-IFJ_19_TEMPLATE_FILE ="./ifj19.py"
-# Path to temporaly file to store compiler output 
-TMP_FILE = "./tmp_file"
-# Python interpreter for output comparison
-PYTHON_INTERPRETER = "python3"
-# Path to ic19 interpreter
-ICL_INTERPRETTER = "./ic19int"
-# Path to folder for incorrect outputs from IFJ 19 compiler
-OUTPUT_FOLDER = "./outputs"
-# Folder with test source files
-TESTS_FOLDER = "./tests"
-# Timeout for each test to cmplete
-SINGLE_TEST_TIMEOUT = 10
-
-# Tests
-# (source_file, compiler_exit_code, interpret_exit_code, program_input)
-# (source_file, [compiler_exit_codes], [interpret_exit_codes], program_input)
-tests = [
-    # Basic tests from assignmnet
-    ("factorial.py",  ERR_COMP_OK, ERR_INT_OK, "5"),
-    ("factorial.py",  ERR_COMP_OK, ERR_INT_OK, "2"),
-    ("factorial.py",  ERR_COMP_OK, ERR_INT_OK, "a"),
-    ("factorial.py",  ERR_COMP_OK, ERR_INT_OK, None),
-    ("factorial2.py", ERR_COMP_OK, ERR_INT_OK, "5"),
-    ("factorial2.py", ERR_COMP_OK, ERR_INT_OK, "2"),
-    ("factorial2.py", ERR_COMP_OK, ERR_INT_OK, "a"),
-    ("factorial2.py", ERR_COMP_OK, ERR_INT_OK, None),
-    ("buildin.py",    ERR_COMP_OK, ERR_INT_OK, "abcdefgh\nabcdefgh"),
-    ("buildin.py",    ERR_COMP_OK, ERR_INT_OK, "abcdefgh"),
-
-    # Lexical analysis tests
-    ("badcomment.py",    ERR_COMP_LEX, None,       None),
-    ("baddot.py",        ERR_COMP_LEX, None,       None),
-    ("badchars.py",      ERR_COMP_LEX, None,       None),
-    ("badcomment2.py",   ERR_COMP_LEX, None,       None),
-    ("badexponent.py",   ERR_COMP_LEX, None,       None),
-    ("badindent.py",     ERR_COMP_LEX, None,       None),
-    ("badindent2.py",    ERR_COMP_LEX, None,       None),
-    ("badstring.py",     ERR_COMP_LEX, None,       None),
-    ("emptyexponent.py", ERR_COMP_LEX, None,       None),
-    ("morezeroes.py",    ERR_COMP_LEX, None,       None),
-    ("nonasci.py",       ERR_COMP_LEX, None,       None),
-    ("specstring.py",    ERR_COMP_OK,  ERR_INT_OK, None),
-
-    # Syntax analysis tests
-    ("badfunction.py",  ERR_COMP_SYN, None,       None),
-    ("badfunction2.py", ERR_COMP_SYN, None,       None),
-    ("badfunction3.py", ERR_COMP_SYN, None,       None),
-    ("badfunction4.py", ERR_COMP_SYN, None,       None),
-    ("badfunction5.py", ERR_COMP_SYN, None,       None),
-    ("badfunction6.py", ERR_COMP_SYN, None,       None),
-    ("badfunction7.py", ERR_COMP_SYN, None,       None),
-    ("badindent3.py",   ERR_COMP_SYN, None,       None),
-    ("badwhile.py",     ERR_COMP_SYN, None,       None),
-    ("badwhile2.py",    ERR_COMP_SYN, None,       None),
-    ("badwhile3.py",    ERR_COMP_SYN, None,       None),
-    ("badif.py",        ERR_COMP_SYN, None,       None),
-    ("badif2.py",       ERR_COMP_SYN, None,       None),
-    ("badif3.py",       ERR_COMP_SYN, None,       None),
-    ("badreturn.py",    ERR_COMP_SYN, None,       None),
-    ("badcall.py",      ERR_COMP_SYN, None,       None),
-    ("badcall2.py",     ERR_COMP_SYN, None,       None),
-    ("badcall3.py",     ERR_COMP_SYN, None,       None),
-    ("emptyprogram.py", ERR_COMP_OK,  ERR_INT_OK, None),
-    ("badexpr.py",      ERR_COMP_SYN, None,       None),
-    ("badexpr2.py",     ERR_COMP_SYN, None,       None),
-    ("badexpr3.py",     ERR_COMP_SYN, None,       None),
-    ("badexpr4.py",     ERR_COMP_SYN, None,       None),
-    ("badexpr5.py",     ERR_COMP_SYN, None,       None),
-
-    # Semantics analysis tests
-    ("badvar.py",        ERR_COMP_SEM_DEF, None, None),
-    ("badvar2.py",       ERR_COMP_SEM_DEF, None, None),
-    ("badvar3.py",       ERR_COMP_SEM_DEF, None, None),
-    ("badfunction8.py",  ERR_COMP_SEM_DEF, None, None),
-    ("badfunction9.py",  ERR_COMP_SEM_DEF, None, None),
-    ("badfunction10.py", ERR_COMP_SEM_DEF, None, None),
-    ("badcall4.py",      ERR_COMP_SEM_DEF, None, None),
-    ("badcall5.py",      ERR_COMP_SEM_DEF, None, None),
-
-    # Interpret error tests
-    ("badtype.py",  [ERR_COMP_OK, ERR_COMP_SEM_TYPE],    ERR_INT_RUN_OPER,   None),
-    ("badtype2.py", [ERR_COMP_OK, ERR_COMP_SEM_TYPE],    ERR_INT_RUN_OPER,   None),
-    ("badtype3.py", [ERR_COMP_OK, ERR_COMP_SEM_TYPE],    ERR_INT_RUN_OPER,   None),
-    ("badtype4.py", [ERR_COMP_OK, ERR_COMP_SEM_TYPE],    ERR_INT_RUN_OPER,   None),
-    ("badtype5.py", [ERR_COMP_OK, ERR_COMP_SEM_TYPE],    ERR_INT_RUN_OPER,   None),
-    ("badtype6.py", [ERR_COMP_OK, ERR_COMP_SEM_TYPE],    ERR_INT_RUN_OPER,   None),
-    ("badtype7.py", [ERR_COMP_OK, ERR_COMP_SEM_TYPE],    ERR_INT_RUN_OPER,   None),
-    ("badtype8.py", [ERR_COMP_OK, ERR_COMP_SEM_TYPE],    ERR_INT_RUN_OPER,   None),
-    ("badtype9.py", [ERR_COMP_OK, ERR_COMP_SEM_TYPE],    ERR_INT_RUN_OPER,   None),
-    ("zerodiv.py",  [ERR_COMP_OK, ERR_COMP_SEM_ZERODIV], ERR_INT_RUN_BADVAL, None),
-    ("zerodiv2.py", [ERR_COMP_OK, ERR_COMP_SEM_ZERODIV], ERR_INT_RUN_BADVAL, None),
-
-    # Buildin functions tests
-    ("badbuildin.py",  ERR_COMP_OK, ERR_INT_RUN_OPER,   None),
-    ("badbuildin2.py", ERR_COMP_OK, ERR_INT_RUN_OPER,   None),
-    ("badbuildin3.py", ERR_COMP_OK, ERR_INT_RUN_OPER,   None),
-    ("badbuildin4.py", ERR_COMP_OK, ERR_INT_RUN_OPER,   None),
-    ("badbuildin5.py", ERR_COMP_OK, ERR_INT_RUN_OPER,   None),
-    ("badbuildin6.py", ERR_COMP_OK, ERR_INT_RUN_OPER,   None),
-    ("badbuildin7.py", ERR_COMP_OK, ERR_INT_RUN_OPER,   None),
-    ("badbuildin8.py", ERR_COMP_OK, ERR_INT_RUN_STRING, None),
-
-    # Correct programs
-    ("lotofparams.py", ERR_COMP_OK, ERR_INT_OK, None),
-    ("longidentif.py", ERR_COMP_OK, ERR_INT_OK, None),
-    ("geometry.py",    ERR_COMP_OK, ERR_INT_OK, "square\n5\nrectangle\n5.4\n10.4\n\n")
-    ("geometry.py",    ERR_COMP_OK, ERR_INT_OK, "circle\n4.7\ntriangle\n1.1\n2.2\n2.2\n2.8\nsquare\n0\n\n")
-    ("geometry.py",    ERR_COMP_OK, ERR_INT_OK, "abc\n")
-]
-
-"""
-END OF CONFIGURATION
-"""
+from config import *
 
 # Global variables
 test_index = 0
@@ -267,6 +122,34 @@ def check_same_output(interpret_info, python_info):
 	# Fail test
         raise RuntimeError(test_id + " - " + error)
 
+# Check if test can be run according to implemented expansions
+def check_extentions(must, cant):
+
+    def get_extention_name(extend):
+	if extend == EXTEND_BOOLOOP:
+            return "BOOLOOP"
+        elif extend == EXTEND_BASE:
+            return "BASE"
+        elif extend == EXTEND_CYCLES:
+            return "CYCLES"
+        elif extend == EXTEND_FUNEXP:
+            return "FUNEX"
+        elif extend == EXTEND_IFTHEN:
+            return "IFTHEN"
+        else:
+            return "UNKNOWN"
+
+    for extention in IMPLEMENTED_EXTENTIONS:
+        if extention in cant:
+            logging.info("Test skipped")
+            logging.info("Reason: extention" + get_extention_name(extention) + " is implemented but not allowed.")
+            pytest.skip("Extention mismatch")
+    for extention in must:
+        if extention in IMPLEMENTED_EXTENTIONS:
+            logging.info("Test skipped")
+            logging.info("Reason: extantion" + get_extention_name(extention) + " is not implemented but required.")
+            pytest.skip("Extention mismatch")
+
 # Setup before first test
 def setup_module():
     if os.path.exists(OUTPUT_FOLDER):
@@ -278,13 +161,10 @@ def teardown_module():
     if os.path.exists(TMP_FILE):
         os.remove(TMP_FILE)
 
-"""def pytest_addoption(parser):
-    parser.addoption("--mode", action="store_true", help="run all combinations")"""
-
 # Execution of single test
 @pytest.mark.timeout(SINGLE_TEST_TIMEOUT)
-@pytest.mark.parametrize("test_file,comp_code,int_code,program_input", tests)
-def test_IFJ_project(test_file, comp_code, int_code, program_input):
+@pytest.mark.parametrize("test_file,comp_code,int_code,program_input,extention_must,extentions_cant", tests)
+def test_IFJ_project(test_file, comp_code, int_code, program_input, extention_must, extentions_cant):
     # Global variables must be accessed here
     global test_index
     global test_id
@@ -292,16 +172,18 @@ def test_IFJ_project(test_file, comp_code, int_code, program_input):
     test_id = test_file
     # Log current test
     logging.info("\n********************\nTEST " + str(test_index) + ": " + test_id + "\n********************\n")
+    # Check extentions
+    check_extentions(extention_must, extentions_cant)
     # Run ifj19 compiler
     test_file_path = TESTS_FOLDER + "/" + test_file
     compiler_info = run_ifjcomp(test_file_path)
     # Check compiler for error
     check_compiler_error(compiler_info, comp_code)
     # End execution if tests are compile only
-    if COMPILE_ONLY or (compiler_info["exit_code"] != 0):
-        if COMPILE_ONLY and (compiler_info["exit_code"] == 0):
+    if TESTING_MODE == MODE_COMPILE or (compiler_info["exit_code"] != 0):
+        if TESTING_MODE == MODE_COMPILE and (compiler_info["exit_code"] == 0):
 	    # Log warning about incomplete testing
-            logging.info("WARNING: This test was not entirely completed, because of the COMPILE_ONLY configuration.")
+            logging.info("WARNING: This test was not entirely completed, because of the MODE_COMPILE testing mode.")
             logging.info("         Interpretation and output checks were not run.")
             logging.info("----")
         logging.info("SUCCESS")
@@ -314,10 +196,10 @@ def test_IFJ_project(test_file, comp_code, int_code, program_input):
 	# Check interpret for error
         check_interpret_error(interpret_info, int_code)
 	# End execution if tests are compile and interpret only
-        if COMPILE_AND_INTERPRET_ONLY or (interpret_info["exit_code"] != 0):
-            if COMPILE_AND_INTERPRET_ONLY and (interpret_info["exit_code"] == 0):
+        if TESTING_MODE == MODE_INTERPRET or (interpret_info["exit_code"] != 0):
+            if TESTING_MODE == MODE_INTERPRET and (interpret_info["exit_code"] == 0):
 		# Log warning about incomplete testing
-                logging.info("WARNING: This test was not entirely completed, because of the COMPILE_AND_INTERPRET_ONLY configuration.")
+                logging.info("WARNING: This test was not entirely completed, because of the MODE_INTERPRET testing mode.")
                 logging.info("         Output checks were not run.")
                 logging.info("----")
             logging.info("SUCCESS")
