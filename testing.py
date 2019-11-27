@@ -76,7 +76,7 @@ def check_compiler_error(process_info, error_code):
 	# Log error
         logging.info("Compiler error output:\n" + (process_info["stderr"] or "<empty>"))
         logging.info("----")
-        error = "Unexpected exit code of IFJ compiler. Actual:" + str(process_info["exit_code"]) + " Expected: " + str(error_code) + "."
+        error = "Unexpected exit code of IFJ compiler. Actual: " + str(process_info["exit_code"]) + " Expected: " + str(error_code) + "."
         logging.error("ERROR:" + error)
 	# Fail test
         raise RuntimeError(test_id + " - " + error)
@@ -87,7 +87,7 @@ def check_interpret_error(process_info, error_code):
 	# Log error
         logging.info("Interpret error output:\n" + (process_info["stderr"] or "<empty>"))
         logging.info("----")
-        error = "Unexpected exit code of IFJ interpreter. Actual:" + str(process_info["exit_code"]) + " Expected: " + str(error_code) + "."
+        error = "Unexpected exit code of IFJ interpreter. Actual: " + str(process_info["exit_code"]) + " Expected: " + str(error_code) + "."
         logging.error("ERROR:" + error)
 	# Fail test
         raise RuntimeError(test_id + " - " + error)
