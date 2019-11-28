@@ -1,1 +1,1 @@
-chr("abc")
+chr('abc')

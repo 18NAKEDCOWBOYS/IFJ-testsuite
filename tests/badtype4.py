@@ -1,1 +1,1 @@
-a = "str" / "atr"
+a = 'str' / 'atr'

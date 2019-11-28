@@ -10,14 +10,9 @@ Tento testovací script je primárně určen pro použití na serveru merlin. Po
 Základní myšlenkou testování je porovnání výsledku IFJ překladače a interpretru s výsledkami stejného programu v pythonu.
 Tento framefork je založený na python modulu pytest.
 
-Prerekvizity:
-Pro instalaci tohoto modulu na serveru merlin použíjte následující příkazy:
-	pip install pytest --user
-	pip install pytest-timeout --user
-Poznámka: Pro spuštění mimo server merlin potřebujete především nainstalovaný python3
-
 Soubory:
-README.md    - Tento soubor
+README.txt   - Tento soubor
+install.sh   - Nainstaluje a nastaví potřebné prerekvizity
 testing.py   - Jádro testovacího programu
 config.py    - Konfigurace testů a testovacího běhu
 clean.sh     - Vyčistí adresář od veškerých souborů generovaných testy
@@ -32,14 +27,16 @@ tests        - Zde se nachází zdrojové soubory jednotlivých testů
 outputs      - Vytvořený testovacím scriptem. Obsahuje testy přeložené do mezikódu, které selhaly
                varování: Tento adresář se smaže při každém spuštění testovacího scriptu
 
+Instalace:
+Pro instalaci na servru merlin použíjte příkaz "chmod +x ./install.sh" a poté script "./install.sh".
+Dále je nutné před použitím mít připravený spustitelný program překladače jazyku IFJ19, který vytváříte.
+
 Použití:
 Upravte obsah souboru "config.py":
 	První část tvoří definice statických konstant. Tyto konstanty by neměli být měněny
 	V druhé části se nachází konfigurační nastavení, které jsou podrobněji popsány v kódu.
 	Třetí část obsahuje seznam všech spuštěných testů společně s očekávanými vstupy a výstupy. Není zde potřeba upravovat pokud pouze testy spouštíte a neupravujete.
-Před spuštěním testů je potřeba váš projekt přeložit klasicky pomocí příkazu "make". Tento script poté pouští pouze hotový přeložený program.
-Použíjte soubor run_tests.sh pro zapnutí testů (případně upravte parametry modulu pytest podle svého uvážení). Před spuštěním testů je potřeba spustit příkaz "chmod +x" na všechny spouštěné soubory, kvůli přidělení práv spouštět. Jedná se o soubory runtest.sh, ic19int a vámi přeložená binárka překladače IFJ19.
-Výstupem je přehled výsledků jednotlivých testů společně se stručnými zprávami o chybách. Detailnější informace o proběhnutých testech lze nalést v souboru log.txt, který byl scriptem vygenerován.
+Použíjte soubor "run_tests.sh" pro zapnutí testů. Výstupem je přehled výsledků jednotlivých testů společně se stručnými zprávami o chybách. Detailnější informace o proběhnutých testech lze nalést v souboru log.txt, který byl scriptem vygenerován.
 
 Přidávání testů:
-Nové testy lze přidávat jednoduše vytvořením testovacího programu v novém souboru v adresáři tests. Následně pak přidáním testu do konfigurace v config.py ve formátu popsaném v souboru. Pokud chcete poskytnout testy i ostatním studentům, vytvářejte testy v samostatných větvích gitu a poté vytvořte merge request, abych mohl testy integrovat do master větve.
+Nové testy lze přidávat jednoduše vytvořením testovacího programu v novém souboru v adresáři tests. Následně pak přidáním testu do souboru "config.py" ve formátu popsaném v souboru. Pokud chcete poskytnout testy i ostatním studentům, vytvářejte testy v samostatných větvích gitu a poté vytvořte merge request, abych mohl testy integrovat do master větve nebo mě kontaktuje přes discord "kam29#4080"

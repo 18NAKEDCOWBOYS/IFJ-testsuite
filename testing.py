@@ -72,23 +72,23 @@ def run_iclint(input_data, program_input):
 # Check error code from ifj19 compiler
 def check_compiler_error(process_info, error_code):
     # Check for correct error code
-    if ((type(error_code) == list) and (process_info["exit_code"] not in error_code)) or ((type(error_code) != list) and (process_info["exit_code"] != error_code)):
+    if process_info["exit_code"] not in error_code:
 	# Log error
         logging.info("Compiler error output:\n" + (process_info["stderr"] or "<empty>"))
         logging.info("----")
         error = "Unexpected exit code of IFJ compiler. Actual: " + str(process_info["exit_code"]) + " Expected: " + str(error_code) + "."
-        logging.error("ERROR:" + error)
+        logging.error("ERROR: " + error)
 	# Fail test
         raise RuntimeError(test_id + " - " + error)
 
 # Check error code from ifj19 interpreter
 def check_interpret_error(process_info, error_code):
-    if ((type(error_code) == list) and (process_info["exit_code"] not in error_code)) or ((type(error_code) != list) and (process_info["exit_code"] != error_code)):
+    if process_info["exit_code"] not in error_code:
 	# Log error
         logging.info("Interpret error output:\n" + (process_info["stderr"] or "<empty>"))
         logging.info("----")
         error = "Unexpected exit code of IFJ interpreter. Actual: " + str(process_info["exit_code"]) + " Expected: " + str(error_code) + "."
-        logging.error("ERROR:" + error)
+        logging.error("ERROR: " + error)
 	# Fail test
         raise RuntimeError(test_id + " - " + error)
 
@@ -102,7 +102,7 @@ def check_same_output(interpret_info, python_info):
         logging.info("Interpret error output:\n" + (interpret_info["stderr"] or "<empty>"))
         logging.info("----")
         error = "Python and IFJ interprets have different exit codes. Python: " + str(python_info["exit_code"]) + " IFJ: " + str(interpret_info["exit_code"]) + "."
-        logging.error("ERROR:" + error)
+        logging.error("ERROR: " + error)
 	# Fail test
         raise RuntimeError(test_id + " - " + error)
 
@@ -118,7 +118,7 @@ def check_same_output(interpret_info, python_info):
         logging.info("Interpret output:\n" + (interpret_info["stdout"] or "<empty>"))
         logging.info("----")
         error = "Python and IFJ interprets have different outputs."
-        logging.error("ERROR:" + error)
+        logging.error("ERROR: " + error)
 	# Fail test
         raise RuntimeError(test_id + " - " + error)
 
@@ -172,6 +172,10 @@ def test_IFJ_project(test_file, comp_code, int_code, program_input, extention_mu
     test_id = test_file
     # Log current test
     logging.info("\n********************\nTEST " + str(test_index) + ": " + test_id + "\n********************\n")
+    if program_input is not None:
+        logging.info("PROGRAM INPUT:")
+        logging.info(program_input)
+        logging.info("----")
     # Check extentions
     check_extentions(extention_must, extentions_cant)
     # Run ifj19 compiler
