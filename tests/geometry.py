@@ -1,3 +1,4 @@
+PI = 3.14159
 print('GEOMETRY CALCULATIONS')
 exit = 0
 

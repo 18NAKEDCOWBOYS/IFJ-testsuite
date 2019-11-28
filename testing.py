@@ -145,7 +145,7 @@ def check_extentions(must, cant):
             logging.info("Reason: extention" + get_extention_name(extention) + " is implemented but not allowed.")
             pytest.skip("Extention mismatch")
     for extention in must:
-        if extention in IMPLEMENTED_EXTENTIONS:
+        if extention not in IMPLEMENTED_EXTENTIONS:
             logging.info("Test skipped")
             logging.info("Reason: extantion" + get_extention_name(extention) + " is not implemented but required.")
             pytest.skip("Extention mismatch")

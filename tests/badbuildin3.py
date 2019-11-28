@@ -1,1 +1,1 @@
-substr('s', 5, 7.9)
+substr('abcdef', 2, 7.9)
