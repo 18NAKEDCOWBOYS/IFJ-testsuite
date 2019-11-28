@@ -7,7 +7,7 @@ def ProcessShape(shape):
     ProcessSquare()
   else:
     if (shape == 'ractangle'):
-      ProcessRactangle()
+      ProcessRectangle()
     else:
       if (shape == 'circle'):
         ProcessCircle()
@@ -41,7 +41,7 @@ def ProcessCircle():
   s = PI * r * r
   print('o = ', o, '\ns = ', s)
 
-def ProcessTrangle():
+def ProcessTriangle():
   print('a = ')
   a = inputf()
   print('b = ')
