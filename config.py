@@ -130,7 +130,7 @@ tests = [
     ("badfunction8.py",  [ERR_COMP_SEM_DEF], [], None, EXTEND_NONE, EXTEND_NONE),
     ("badfunction9.py",  [ERR_COMP_SEM_DEF], [], None, EXTEND_NONE, EXTEND_NONE),
     ("badfunction10.py", [ERR_COMP_SEM_DEF], [], None, EXTEND_NONE, EXTEND_NONE),
-    ("badcall4.py",      [ERR_COMP_SEM_DEF], [], None, EXTEND_NONE, EXTEND_NONE),
+    ("badcall4.py",      [ERR_COMP_SEM_PAR], [], None, EXTEND_NONE, EXTEND_NONE),
     ("badcall5.py",      [ERR_COMP_SEM_PAR], [], None, EXTEND_NONE, EXTEND_NONE),
     ("badfunction6.py",  [ERR_COMP_SYN, ERR_COMP_SEM_DEF], [], None, EXTEND_NONE, EXTEND_NONE),
 
