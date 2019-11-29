@@ -1,4 +1,4 @@
 def a():
     pass
 
-b = a(param)
+b = a(5)
