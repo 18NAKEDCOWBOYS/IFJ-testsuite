@@ -1,4 +1,4 @@
-# Testing framework for IFJ 2019 projects
+# Testing framework for IFJ 2020 projects
 
 """
 SCRIPT FILE - DO NOT EDIT
@@ -17,21 +17,9 @@ test_index = 0
 test_id = ""
 
 # Run test on native python interpreter
-def run_python(test_source, program_input):
-    # read template file to enable interpretation of ifj19 with native python
-    f = open(IFJ_19_TEMPLATE_FILE, "r")
-    template_content = f.read()
-    f.close()
-    # Read test source file
-    f = open(test_source, "r")
-    program_content = f.read()
-    f.close()
-    # Generate source file native python
-    f = open(TMP_FILE, "w")
-    f.write(template_content + program_content)
-    f.close()
+def run_go(test_source, program_input):
     # Execute test on native python
-    cmd = [PYTHON_INTERPRETER, TMP_FILE]
+    cmd = [GO_INTERPRETER, "run", test_source, IFJ_20_TEMPLATE_FILE]
     process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     capture_out, capture_err = process.communicate(input=program_input)
     # Return info about the execution
@@ -39,11 +27,11 @@ def run_python(test_source, program_input):
             "stdout" : capture_out,
             "stderr" : capture_err}
 
-# Run test on ifj19 compiler
+# Run test on ifj20 compiler
 def run_ifjcomp(test_source):
     # Open test source
     f = open(test_source, 'rb')
-    # Execute test on ifj19 compiler
+    # Execute test on ifj20 compiler
     cmd = IFJCOMP_EXECUTABLE
     process = subprocess.Popen(cmd, stdin=f, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     capture_out, capture_err = process.communicate()
@@ -54,7 +42,7 @@ def run_ifjcomp(test_source):
             "stdout" : capture_out,
             "stderr" : capture_err}
 
-# Run interpret witj intermediate code
+# Run interpret with intermediate code
 def run_iclint(input_data, program_input):
     # Save intermediate code to file
     f = open(TMP_FILE, "w")
@@ -69,7 +57,7 @@ def run_iclint(input_data, program_input):
             "stdout" : capture_out,
             "stderr" : capture_err}
 
-# Check error code from ifj19 compiler
+# Check error code from ifj20 compiler
 def check_compiler_error(process_info, error_code):
     # Check for correct error code
     if process_info["exit_code"] not in error_code:
@@ -81,7 +69,7 @@ def check_compiler_error(process_info, error_code):
 	# Fail test
         raise RuntimeError(test_id + " - " + error)
 
-# Check error code from ifj19 interpreter
+# Check error code from ifj20 interpreter
 def check_interpret_error(process_info, error_code):
     if process_info["exit_code"] not in error_code:
 	# Log error
@@ -92,16 +80,16 @@ def check_interpret_error(process_info, error_code):
 	# Fail test
         raise RuntimeError(test_id + " - " + error)
 
-# Check output from native python and ifj19 interpreter
-def check_same_output(interpret_info, python_info):
-    # Check if python and ifj19 have the save exit code
-    if interpret_info["exit_code"] != python_info["exit_code"]:
+# Check output from native go interpreter and ifj20 interpreter
+def check_same_output(interpret_info, go_info):
+    # Check if go and ifj20 have the save exit code
+    if interpret_info["exit_code"] != go_info["exit_code"]:
 	# Log error
-        logging.info("Python error output:\n" + (python_info["stderr"] or "<empty>"))
+        logging.info("Go error output:\n" + (go_info["stderr"] or "<empty>"))
         logging.info("----")
         logging.info("Interpret error output:\n" + (interpret_info["stderr"] or "<empty>"))
         logging.info("----")
-        error = "Python and IFJ interprets have different exit codes. Python: " + str(python_info["exit_code"]) + " IFJ: " + str(interpret_info["exit_code"]) + "."
+        error = "Go and IFJ interprets have different exit codes. Go: " + str(go_info["exit_code"]) + " IFJ: " + str(interpret_info["exit_code"]) + "."
         logging.error("ERROR: " + error)
 	# Fail test
         raise RuntimeError(test_id + " - " + error)
@@ -178,7 +166,7 @@ def test_IFJ_project(test_file, comp_code, int_code, program_input, extention_mu
         logging.info("----")
     # Check extentions
     check_extentions(extention_must, extentions_cant)
-    # Run ifj19 compiler
+    # Run ifj20 compiler
     test_file_path = TESTS_FOLDER + "/" + test_file
     compiler_info = run_ifjcomp(test_file_path)
     # Check compiler for error
@@ -193,9 +181,9 @@ def test_IFJ_project(test_file, comp_code, int_code, program_input, extention_mu
         logging.info("SUCCESS")
         return
 
-    # If this part failes, the intermedate code must be saved for further analysis
+    # If this part fails, the intermedate code must be saved for further analysis
     try:
-	# Run ifj19 interpret
+	# Run ifj20 interpret
         interpret_info = run_iclint(compiler_info["stdout"], program_input)
 	# Check interpret for error
         check_interpret_error(interpret_info, int_code)
@@ -209,12 +197,12 @@ def test_IFJ_project(test_file, comp_code, int_code, program_input, extention_mu
             logging.info("SUCCESS")
             return
 
-	# Run test on native python and compare results with ifj19
-        python_info = run_python(test_file_path, program_input)
+	# Run test on native go interpreter and compare results with ifj20 interpreter
+        go_info = run_go(test_file_path, program_input)
         check_same_output(interpret_info, python_info)
     except:
 	# Save intermetiate code
-        f = open(OUTPUT_FOLDER + "/" + test_file + ".ifj19code", "w")
+        f = open(OUTPUT_FOLDER + "/" + test_file + ".ifj20code", "w")
         f.write(compiler_info["stdout"])
         f.close()
         raise
