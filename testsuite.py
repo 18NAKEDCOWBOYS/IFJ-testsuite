@@ -108,15 +108,21 @@ def ParseArgs ():
         raise Exception('The path \'' + args.tests_definition + '\' is not a valid tests definiton file')
 
     print('checking go interpreter')
-    output = subprocess.check_output([args.go_interpreter, 'version'])
+    try:
+        output = subprocess.check_output([args.go_interpreter, 'version'])
+    except Exception:
+        raise Exception('Go interpreter is not valid. Command: \'' + args.go_interpreter + ' version\' couldn\'t be executed. Reason: ' + str(ex))
     if output[:11] != 'go version ':
         raise Exception('Go interpreter is not valid. Command: \'' + args.go_interpreter + ' version\' didn\'t produce correct output')
     print('go interpreter found in version \'' + output[11:-1] + '\'')
 
     print('checking ifjcode interpreter')
-    output = subprocess.check_output([args.ifjcode_interpreter])
-    if output[:7] != 'BUILD: '
-        raise Exception('Ifjcode interpreter is not valid. Command: \'' + args.ifjcode_interpreter + '\' didn\'t produce correct output')
+    try:
+        output = subprocess.check_output([args.ifjcode_interpreter, '--help'])
+    except Exception as ex:
+        raise Exception('Ifjcode interpreter is not valid. Command: \'' + args.ifjcode_interpreter + ' --help\' couldn\'t be executed. Reason:' + str(ex))
+    if output[:7] != 'BUILD: ':
+        raise Exception('Ifjcode interpreter is not valid. Command: \'' + args.ifjcode_interpreter + ' --help\' didn\'t produce correct output')
     print('ifjcode interpreter found')
 
     if not os.path.isfile(args.go_include_file):
@@ -314,7 +320,7 @@ def ListTests(tests, groups):
             indent -= 1
             print('')
 
-    print('\nLIST OF TESTS AND GROUPS\n')
+    print('\nLIST OF TESTS AND GROUPS:\n')
     PrintTests(tests, 0)
     for group in groups:
         PrintGroup(group, 0)
@@ -370,40 +376,6 @@ def ProcessTests(tests, groups, args):
     print('\'' + str(removed) + '\' tests were removed from testing due to incompatible extensions')
     print('\'' + str(len(final)) + '\' tests will be run')
     return final
-"""
-def GenerateConfig(args, tests):
-
-    if os.path.isfile(CONFIGURATION_OUTPUT):
-        print('removing old test configuration')
-        os.remove(CONFIGURATION_OUTPUT)
-    if os.path.isdir(CONFIGURATION_OUTPUT):
-         raise Exception('There is a directory with the same name as output configuration file \'' + CONFIGURATION_OUTPUT + '\'')
-
-    print('generating testing configuration')
-    with open(CONFIGURATION_OUTPUT, 'w') as f:
-        if args.mode_all:
-            f.write('TESTING_MODE = 0\n')
-        elif args.mode_interpret_only:
-            f.write('TESTING_MODE = 1\n')
-        elif args.mode_compile_only:
-            f.write('TESTING_MODE = 2\n')
-        else:
-            raise Exception('BUG: invalid testing mode')
-
-        f.write('IFJCOMP_EXECUTABLE = \'' + args.compiler + '\'\n')
-        f.write('IFJ_20_TEMPLATE_FILE = \'' + args.go_include_file + '\'\n')
-        f.write('TMP_FILE = \'' + args.tmp_file + '\'\n')
-        f.write('GO_INTERPRETTER = \'' + args.go_interpreter + '\'\n')
-        f.write('ICL_INTERPRETTER = \'' + args.ifjcode_interpreter + '\'\n')
-        f.write('OUTPUT_FOLDER = \'' + args.output_folder + '\'\n')
-        f.write('SINGLE_TEST_TIMEOUT = \'' + str(args.timeout) + '\'\n')
-
-        f.write('tests = [\n')
-        for test in tests:
-            f.write('    (\'' + test['file'] + '\', ' + str(test['compiler-codes']) + ', ' + str(test['interpret-codes']) + ', ' + (('\'' + test['input'] + '\'') if 'input' in test else 'None') + ')\n')
-        f.write(']\n')
-    print('testing configuration successfully generated')
-"""
 
 # Run test on native python interpreter
 def RunGo(test_source, program_input, interpret, template):
@@ -563,13 +535,14 @@ if args.mode_list:
     ListTests(tests, groups)
 else:
     tests = ProcessTests(tests, groups, args)
-    #GenerateConfig(args, tests)
+    print('\nTEST RESULTS:\n')
     with open(args.log_file, 'w') as log:
         for test in tests:
-            RunTest(test, args, log)
-"""
+#            RunTest(test, args, log)
             try:
                 RunTest(test, args, log)
             except Exception as error:
-                log.write('FAIL: ' + error + '\n')
-"""
+                print(test['name'] + ': FAILED')
+            else:
+                print(test['name'] + ': PASSED')
+
