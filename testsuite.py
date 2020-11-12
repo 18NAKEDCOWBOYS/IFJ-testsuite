@@ -10,20 +10,23 @@ import os
 import json
 import subprocess
 import signal
+import shutil
 
 # Default argument values
 DEFAULT_COMPILER_PATH = './ifj20'
 DEFAULT_LOG_FILE = './log.txt'
 DEFAULT_TIMEOUT = 5
 DEFAULT_OUTPUT_FOLDER = './outputs'
-DEFAULT_TESTS_DIR = './tests'
+DEFAULT_TEST_DIR = './tests'
 DEFAULT_GO_INTERPRETER = 'go'
 DEFAULT_IFJCODE_INTERPRETER = './ic20int'
 DEFAULT_GO_INCLUDE = './ifj20.go'
-DEFAULT_TMP_FILE = './tmp'
+DEFAULT_TMP_DIR = './tmp'
 
-# configuration file constants
-CONFIGURATION_OUTPUT = './config.py'
+# Tmp file names
+TMP_TEMPLATE_FILE_NAME = 'ifj20.go'
+TMP_GO_FILE_NAME = 'in.go'
+TMP_IFJCODE_FILE_NAME = 'out.ifjcode'
 
 # List of extensions
 EXTENSIONS = ['BOOLTHEN', 'BASE', 'FUNEXP', 'MULTIVAL', 'UNARY']
@@ -59,17 +62,16 @@ def ParseArgs ():
     parser.add_argument('--output-folder', '-o', default=DEFAULT_OUTPUT_FOLDER, help='path to the folder where compiler output (IFJ20code language programs) is stored for every test that fails on interpretation or checking (if folder already exists, it will be deleted). default: ' + DEFAULT_OUTPUT_FOLDER)
 
     # Define other arguments
-    parse.add_argument('--tests-dir', default=DEFAULT_TESTS_DIR, help='Directory containing all runable tests. default: ' + DEFAULT_TESTS_DIR)
     parser.add_argument('--go-interpreter', default=DEFAULT_GO_INTERPRETER, help='command to execute native go interpreter for output checking. default: ' + DEFAULT_GO_INTERPRETER)
     parser.add_argument('--ifjcode-interpreter', default=DEFAULT_IFJCODE_INTERPRETER, help='command to execute IFJ20code interpreter for compiler output interpretation. default: ' + DEFAULT_IFJCODE_INTERPRETER)
     parser.add_argument('--go-include-file', default=DEFAULT_GO_INCLUDE, help='path to the file that is required to be included in go programs to execute ifj language. default: ' + DEFAULT_GO_INCLUDE)
-    parser.add_argument('--tmp-file', default=DEFAULT_TMP_FILE, help='path to a temp file that will be created for each test to store compiler output for interpretation. default: ' + DEFAULT_TMP_FILE)
+    parser.add_argument('--tmp-dir', default=DEFAULT_TMP_DIR, help='path to a temp directory that will be created to store temp files for tests. default: ' + DEFAULT_TMP_DIR)
 
     # Parse arguments from command line
     args = parser.parse_args()
 
     # Argument postprrocessing
-    if not args.mode_compile_only and not args.mode_interpret_only and not args.mode_all and not args.mode_list:
+    if not args.mode_compile_only and not args.mode_interpret_only and not args.mode_all:
         print('setting default mode --mode-all')
         args.mode_all = True
 
@@ -79,15 +81,15 @@ def ParseArgs ():
         print('parsing test selection file')
         with open(args.select_file) as f:
             while True:
-            line = f.readline()
-            if line == '':
-                break
-            line = line.strip()
-            if not os.path.isfile(line) and not os.path.isdir(line):
-                raise Exception('\'' + line + '\' line in test selection file is not a valid test file or test directory')
-            args.select.append(line)
+                line = f.readline()
+                if line == '':
+                    break
+                line = line.strip()
+                if not os.path.isfile(line) and not os.path.isdir(line):
+                    raise Exception('\'' + line + '\' line in test selection file is not a valid test file or test directory')
+                args.select.append(line)
     else:
-         if not os.path.isfile(args.select) and not os.path.isdir(args.select):
+        if not os.path.isfile(args.select) and not os.path.isdir(args.select):
             raise Exception('Test selection \'' + args.select + '\'  is not a valid test file or test directory')
         args.select = [args.select]
 
@@ -117,9 +119,8 @@ def ParseArgs ():
     if os.path.isdir(args.output_folder):
         print('removing old output folder \'' + args.output_folder + '\'')
         shutil.rmtree(args.output_folder)
-
-    if not os.path.isdir(args.tests_dir):
-        raise Exception('The tests directory path \'' + args.tests_dir + '\' is not a valid directory')
+    print('creating output folder \'' + args.output_folder + '\'')
+    os.mkdir(args.output_folder)
 
     print('checking go interpreter')
     try:
@@ -142,12 +143,21 @@ def ParseArgs ():
     if not os.path.isfile(args.go_include_file):
         raise Exception('The path \'' + args.go_include_file + '\' is not a valid go include file')
 
+    if os.path.isfile(args.tmp_dir):
+        raise Exception('There is a file with the same name as specified tmp directory \'' + args.tmp_dir + '\'')
+    if os.path.isdir(args.tmp_dir):
+        print('using exesting tmp directory  \'' + args.tmp_dir + '\'')
+    else:
+        print('creating tmp directory  \'' + args.tmp_dir + '\'')
+        os.mkdir(args.tmp_dir)
+    shutil.copyfile(args.go_include_file, os.path.join(args.tmp_dir, TMP_TEMPLATE_FILE_NAME))
+
     return args
 
 def ProcessTests(args):
     def ProcessTestFile(path):
         result = {}
-        result['name'] = os.path.basename(path)
+        result['name'] = path
         result['code'] = ''
         result['compiler'] = []
         result['interpret'] = []
@@ -156,7 +166,7 @@ def ProcessTests(args):
         result['scenarios'] = []
         with open(path, 'r') as f:
             while True:
-                line = f.readline().trim()
+                line = f.readline().strip()
                 if line.startswith('//compiler '):
                     if result['compiler'] != []:
                         raise Exception('compiler pragma present multiple times in test header of test file \'' + path + '\'')
@@ -186,7 +196,7 @@ def ProcessTests(args):
                         content = inputF.read()
                     interpretCodes = []
                     for item in scenarios[2:]:
-                        interpretCodes..append(int(item))
+                        interpretCodes.append(int(item))
                     if interpretCodes == []:
                         interpretCodes.append(0)
                     result['scenarios'].append((scenario[1], content, interpretCodes))
@@ -248,14 +258,24 @@ def ProcessTests(args):
                     result += ProcessTestFile(os.path.join(directory, f))
         else:
             raise Exception('\'' + item + '\' is not a test file or a test directory')
+
+    for i in range(len(result)):
+        for j in range(i+1, len(result)):
+            if os.path.basename(result[i]['name']) == os.path.basename(result[j]['name']):
+                raise Exception('Test files \'' + result[i]['name'] + '\' and \'' + result[j]['name'] + '\' have the same name')
+
+
+    print('Total tests selected: \'' + str(len(result)) + '\'')
     return result
 
 # Run test on native python interpreter
-def RunGo(test_code, program_input, interpret, template, tmp_file):
+def RunGo(test_code, program_input, interpret, tmp_dir):
     # Execute test on native go interpreter
+    tmp_file = os.path.join(tmp_dir, TMP_GO_FILE_NAME)
+    template_file = os.path.join(tmp_dir, TMP_TEMPLATE_FILE_NAME)
     with open(tmp_file, 'w') as f:
         f.write(test_code)
-    cmd = [interpret, 'run', tmp_file, template]
+    cmd = [interpret, 'run', tmp_file, template_file]
     process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     capture_out, capture_err = process.communicate(input=program_input)
     # Return info about the execution
@@ -274,8 +294,9 @@ def RunIfjcomp(test_code, compiler):
             'stderr' : capture_err}
 
 # Run interpret with intermediate code
-def RunIclint(input_data, program_input, tmp_file, interpret):
+def RunIclint(input_data, program_input, tmp_dir, interpret):
     # Save intermediate code to file
+    tmp_file = os.path.join(tmp_dir, TMP_IFJCODE_FILE_NAME)
     with open(tmp_file, 'w') as f:
         f.write(input_data)
     # Execute code on interpreter
@@ -325,13 +346,13 @@ def CheckSameOutput(interpret_info, go_info):
         raise RuntimeError(test_id + ' - ' + error)
 
     # Check standart output of go and ifj20
-    if interpret_info['stdout'] != python_info['stdout']:
+    if interpret_info['stdout'] != go_info['stdout']:
 	# Log error
-        log.write('Python error output:\n' + (python_info['stderr'] or '<empty>') + '\n')
+        log.write('Python error output:\n' + (go_info['stderr'] or '<empty>') + '\n')
         log.write('----\n')
         log.write('Interpret error output:\n' + (interpret_info['stderr'] or '<empty>') + '\n')
         log.write('----\n')
-        log.write('Python output:\n' + (python_info['stdout'] or '<empty>') + '\n')
+        log.write('Python output:\n' + (go_info['stdout'] or '<empty>') + '\n')
         log.write('----\n')
         log.write('Interpret output:\n' + (interpret_info['stdout'] or '<empty>') + '\n')
         log.write('----\n')
@@ -339,6 +360,15 @@ def CheckSameOutput(interpret_info, go_info):
         log.write('ERROR: ' + error + '\n')
 	# Fail test
         raise RuntimeError(test_id + ' - ' + error)
+
+def CheckExtensions(required, forbiden, extensions):
+    for item in required:
+        if item not in extensions:
+            return False
+    for item in forbiden:
+        if item in extensions:
+            return False
+    return True
 
 def RunTest(test, args):
     # Global variables must be accessed here
@@ -353,8 +383,8 @@ def RunTest(test, args):
         log.write(test['input'] + '\n')
         log.write('----\n')
     # Check extensions
-    if not CheckExtensions(test['extsnsions+'], test['extensions-'], args.extensions):
-        log.write('test skiped duw to extensions missmatch\n')
+    if not CheckExtensions(test['extensions+'], test['extensions-'], args.extensions):
+        log.write('test skiped due to extensions missmatch\n')
         log.write('Required extensions: ' ' '.join(test['extensions+']) + '\n')
         log.write('Forbiden extensions: ' ' '.join(test['extensions-']) + '\n')
         log.write('Implemented extensions: ' ' '.join(args.extensions) + '\n')
@@ -378,7 +408,7 @@ def RunTest(test, args):
     # If this part fails, the intermedate code must be saved for further analysis
     try:
 	# Run ifj20 interpret
-        interpret_info = RunIclint(compiler_info['stdout'], test['input'], args.tmp_file, args.ifj_interpreter)
+        interpret_info = RunIclint(compiler_info['stdout'], test['input'], args.tmp_dir, args.ifjcode_interpreter)
 	# Check interpret for error
         CheckInterpretError(interpret_info, test['interpret'])
 	# End execution if tests are compile and interpret only
@@ -392,11 +422,12 @@ def RunTest(test, args):
             return True
 
 	# Run test on native go interpreter and compare results with ifj20 interpreter
-        go_info = RunGo(test['code'], test['input'], args.go_interpret, args.go_include_file, args.tmp_file)
-        CheckSameOutput(interpret_info, python_info)
+        go_info = RunGo(test['code'], test['input'], args.go_interpreter, args.tmp_dir)
+        CheckSameOutput(interpret_info, go_info)
     except:
 	# Save intermetiate code
-        f = open(args.output_folder + '/' + test['name'] + '.ifj20code', 'w')
+        outputFileName = os.path.basename(test['name'])[:-3] + '.ifjcode'
+        f = open(os.path.join(args.output_folder, outputFileName), 'w')
         f.write(compiler_info['stdout'])
         f.close()
         raise
@@ -419,16 +450,27 @@ tests = ProcessTests(args)
 print('\nTEST RESULTS:\n')
 log = open(args.log_file, 'w')
 signal.signal(signal.SIGALRM, AlarmHandle)
+passed = 0
+failed = 0
+skiped = 0
 for test in tests:
     try:
         signal.alarm(args.timeout)
         result = RunTest(test, args)
         signal.alarm(0)
     except Exception as error:
+        failed = failed + 1
         print(test['name'] + ': FAILED')
     else:
         if result:
+            passed = passed + 1
             print(test['name'] + ': PASSED')
         else:
+            skiped = skiped + 1
             print(test['name'] + ': SKIPED')
 log.close()
+
+print('\n-------- SUMMARY --------\n')
+print('PASSED: ' + str(passed))
+print('FAILED: ' + str(failed))
+print('SKIPED: ' + str(skiped))

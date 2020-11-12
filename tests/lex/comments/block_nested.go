@@ -1,4 +1,4 @@
-//compiler 1
+//compiler 2
 // Nested block comment
 //
 package main
