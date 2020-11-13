@@ -14,7 +14,7 @@ import shutil
 
 # Default argument values
 DEFAULT_COMPILER_PATH = './ifj20'
-DEFAULT_LOG_FILE = './log.txt'
+DEFAULT_LOG_FILE = './log'
 DEFAULT_TIMEOUT = 5
 DEFAULT_OUTPUT_FOLDER = './outputs'
 DEFAULT_TEST_DIR = './tests'
