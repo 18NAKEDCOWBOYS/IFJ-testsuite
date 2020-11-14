@@ -1,7 +1,7 @@
 //
 package main
 
-func alpha (a int) (int) {
+func alpha () (float64) {
 	return 6.7
 }
 

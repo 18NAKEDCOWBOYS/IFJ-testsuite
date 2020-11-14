@@ -1,3 +1,4 @@
+//
 // Program 1: Vypocet faktorialu (iterativne)
 package main
 

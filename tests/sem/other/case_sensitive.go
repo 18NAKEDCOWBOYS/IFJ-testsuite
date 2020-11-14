@@ -1,4 +1,4 @@
-//compiler 3
+//compiler 3 4
 //
 package main
 

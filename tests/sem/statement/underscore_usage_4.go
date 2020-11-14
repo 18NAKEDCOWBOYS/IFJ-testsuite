@@ -1,3 +1,4 @@
+//compiler 7
 //
 package main
 

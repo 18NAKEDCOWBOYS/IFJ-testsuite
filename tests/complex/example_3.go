@@ -1,3 +1,4 @@
+//
 // Program 3: Prace s retezci a vestavenymi funkcemi
 package main
 
