@@ -2,7 +2,7 @@
 package main
 
 func main () {
-	if (0==251) {
-	}else{
-	}
+	a:= 0
+	b:=0.0
+	a = float2int(b)
 }

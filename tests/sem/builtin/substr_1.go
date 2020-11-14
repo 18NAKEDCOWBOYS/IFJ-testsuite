@@ -3,9 +3,6 @@ package main
 
 func main () {
 	a := 0
-	if 0==0 {
-		a:=1
-	}else {
-		a:=2
-	}
+	b := ""
+	b,a = substr("help", 2, 1)
 }

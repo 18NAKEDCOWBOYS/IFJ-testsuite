@@ -1,8 +1,9 @@
+//compiler 5
 //
 package main
 
 func main () {
-	if 0==1 {
+	if (5>86.4e5) {
 	} else {
 	}
 }

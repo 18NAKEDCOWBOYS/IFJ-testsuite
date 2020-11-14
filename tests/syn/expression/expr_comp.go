@@ -3,26 +3,22 @@ package main
 
 func main () {
 	if 0==0 {
-	}
-	else {
+	} else {
 	}
 
 	for ;0!=0; {
 	}
 
 	if 0<1 {
-	}
-	else {
+	} else {
 	}
 
 	if 0>1 {
-	}
-	else {
+	} else {
 	}
 
 	for ;1<=0; {
 	}
-
 	for ;0>=1; {
 	}
 }

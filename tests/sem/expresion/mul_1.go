@@ -1,8 +1,7 @@
+//compiler 5
 //
 package main
 
 func main () {
-	if (0==251) {
-	}else{
-	}
+	a := "string" * 5
 }

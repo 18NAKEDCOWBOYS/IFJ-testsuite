@@ -1,9 +1,8 @@
 //compiler 5
+// TODO consider extensions
 //
 package main
 
 func main () {
-	if 5 {
-	} else{
-	}
+	a := 5 + (5==5)
 }

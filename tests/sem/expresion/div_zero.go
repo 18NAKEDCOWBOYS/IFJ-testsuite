@@ -1,8 +1,7 @@
+//compiler 9
 //
 package main
 
 func main () {
-	if (0==251) {
-	}else{
-	}
+	a := 5 / 0
 }

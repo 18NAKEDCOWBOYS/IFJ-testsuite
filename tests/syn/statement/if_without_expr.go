@@ -4,7 +4,6 @@ package main
 
 func main () {
 	if {
-	}
-	else {
+	} else {
 	}
 }

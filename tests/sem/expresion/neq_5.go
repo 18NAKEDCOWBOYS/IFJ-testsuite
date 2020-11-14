@@ -2,7 +2,7 @@
 package main
 
 func main () {
-	if (0==251) {
-	}else{
+	if (5!=5) {
+	} else {
 	}
 }

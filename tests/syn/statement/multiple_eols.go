@@ -12,9 +12,7 @@ func main () {
 	if (0==0) {
 
 
-	}
-
-	else {
+	} else {
 		a = 6
 
 

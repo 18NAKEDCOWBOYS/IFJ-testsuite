@@ -1,8 +1,9 @@
+//compiler 5
 //
 package main
 
 func main () {
-	if 0==1 {
+	if ("test" != 0) {
 	} else {
 	}
 }

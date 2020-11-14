@@ -2,7 +2,5 @@
 package main
 
 func main () {
-	if (0==251) {
-	}else{
-	}
+	a := 68.4 / 5e-2
 }

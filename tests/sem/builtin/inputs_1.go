@@ -2,7 +2,7 @@
 package main
 
 func main () {
-	if (0==251) {
-	}else{
-	}
+	a:= ""
+	b:= 0
+	a,b = inputs()
 }
