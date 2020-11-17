@@ -1,4 +1,4 @@
-// identifier with numbers
+//nogo
 //
 package main
 

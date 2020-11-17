@@ -6,18 +6,13 @@ Upozornění: Autor tohoto repozitáře NERUČÍ za správnost a korektnost vytv
 Upozornění: Funkčnost scriptu je ověřena na servru merlin, na jiných strojích se může postup spuštění a instalace lišit.
 
 Základní myšlenkou testování je porovnání výsledku IFJ překladače a interpretru s výsledkami stejného programu v jazyce go.
-Tento framefork je založený na python modulu pytest.
 
 Soubory:
 README.txt   - Tento soubor
-install.sh   - Nainstaluje a nastaví potřebné prerekvizity
-testing.py   - Jádro testovacího programu
-config.py    - Konfigurace testů a testovacího běhu
-clean.sh     - Vyčistí adresář od veškerých souborů generovaných testy
-run_tests.sh - Ulehčení spouštění testovacího scriptu
+testsuite.py - Jádro testovacího programu
 ifj20.go     - soubor obsahující funkce pro umožnění interpretace jazyka IFJ20 nativním interpretem jazyka go
 ic20int      - referenční interpret ze stránek předmětu IFJ
-log.txt      - Vytvořený testovacím scriptem. Obsahuje detailnější záznam testu.
+log.txt      - Vytvořený testovacím scriptem. Obsahuje detailnější záznamy o proběhnlých testech.
                varování: Tento soubor se smaže při každém spuštění testovacího scriptu
 
 Adresáře:
@@ -25,16 +20,17 @@ tests        - Zde se nachází zdrojové soubory jednotlivých testů
 outputs      - Vytvořený testovacím scriptem. Obsahuje testy přeložené do mezikódu, které selhaly
                varování: Tento adresář se smaže při každém spuštění testovacího scriptu
 
-Instalace:
-Pro instalaci na servru merlin použíjte příkaz "chmod +x ./install.sh" a poté script "./install.sh".
-Dále je nutné před použitím mít připravený spustitelný program překladače jazyku IFJ20, který vytváříte.
-
 Použití:
-Upravte obsah souboru "config.py":
-	První část tvoří definice statických konstant. Tyto konstanty by neměli být měněny
-	V druhé části se nachází konfigurační nastavení, které jsou podrobněji popsány v kódu.
-	Třetí část obsahuje seznam všech spouštěných testů společně s očekávanými vstupy a výstupy. Není zde potřeba upravovat nic pokud pouze testy spouštíte a neupravujete.
-Použíjte soubor "run_tests.sh" pro zapnutí testů. Výstupem je přehled výsledků jednotlivých testů společně se stručnými zprávami o chybách. Detailnější informace o proběhnutých testech lze nalést v souboru log.txt, který byl scriptem vygenerován.
+Testy spustíte vykonáním příkazu "python2 ./testsuite.py". Testovací script obsahuje celou řadu parametrů, kterými lze upravit/nastavit chování scriptu. Doporučuji seznámit se s těmito parametry pomocí spuštění scriptu s parametrem "--help".
 
 Přidávání testů:
-Nové testy lze přidávat jednoduše vytvořením testovacího programu v novém souboru v adresáři tests. Následně pak přidáním testu do souboru "config.py" ve formátu popsaném v souboru. Pokud chcete poskytnout testy i ostatním studentům, vytvářejte testy v samostatných větvích gitu a poté vytvořte merge request, abych mohl testy integrovat do master větve nebo mě kontaktuje přes discord "kam29#4080"
+Nové testy lze přidávat jednoduše vytvořením testovacího programu v novém souboru v adresáři tests (nebo jeho podadresářích). Tento nový testovací soubor musí mít koncovku .go a na začátku obsahovat testovací hlavičku, která obsahuje informace o konkrétních testovacích případech (návratové kódy, vstupy, atd.). Přesný formát hlavičky bude popsán níže. Pokud chcete poskytnout testy i ostatním studentům, vytvářejte testy v samostatných větvích gitu a poté vytvořte merge/pull request, abych mohl testy integrovat do master větve nebo mě kontaktuje přes discord "kam29#4080"
+
+hlavička testů:
+Každý testovací soubor musí na svém začátku obsahovat hlavičku ukončenou řádkem "//" (i pokud je hlavička prázdná). Hlavička může obsahovat následující řádky:
+	"//compiler <compiler-codes>": Seznam validních návratových kódů překladače pro tento test. Jednotlivé číselné kódy jsou odděleny mezero. Pokud seznam obsahuje nulu, následuje po úspěšném překladu interpretace. Pokud tento řádek není přítomen, považuje se nula za jediný validní návratový kód.
+	"//interpret <interpret-codes>": Seznam validních návratových kódů interpretu pro tento test. Jednotlivé číselné kódy jsou odděleny mezerou. Pokud seznam obsahuje nulu, následuje po úspěšné interpretace porovnání s výsledkem go interpretu. Pokud tento řádek není přítomen, považuje se nula za jediný validní návratový kód.
+	"//nogo": Pokud je tento řádek přítomen, neprovádí se porovnání výsledků interpretace s výsledky go interpretu. Toto je vhodné pro situace, které jazyk ifj20 zpracovává jinak než jazyk go (např. nepoužité proměnné).
+	"//extensions+ <extensions>": Seznam rozšíření, které je nutné implementovat pro korektní průběh daného testu. Rozšíření jsou uváděna v textová podobě (stejné jako v zadání projektu) a jsou oddělena mezerou. Pokud tento řádek není přítomen, není nutné mít implementováno žádné rozšíření pro korektní výsledek testu.
+	"//extensions- <extensions>": Seznam rozšíření, které nesmí být implementovány pro korektní průběh daného testu. Rozšíření jsou uváděna v textová podobě (stejné jako v zadání projektu) a jsou oddělena mezerou. Pokud tento řádek není přítomen, není zakázana implementace žádného rozšíření pro korektní výsledek testu.
+	"//input <input-file>": Cesta k souboru (relativní k testu), který obsahuje vstup pro testovací program. Tento řádek může být přítomný vícekrát a pro každý je vytvořen samostatný testovací scénář.

@@ -1,4 +1,4 @@
-// string with escape sequences
+//nogo
 //
 package main
 

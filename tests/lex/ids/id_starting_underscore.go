@@ -1,4 +1,4 @@
-// identifier with starting underscore
+//nogo
 //
 package main
 

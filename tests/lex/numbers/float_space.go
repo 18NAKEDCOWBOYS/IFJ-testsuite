@@ -1,5 +1,4 @@
 //compiler 1
-// float number with exponent and dot
 //
 package main
 

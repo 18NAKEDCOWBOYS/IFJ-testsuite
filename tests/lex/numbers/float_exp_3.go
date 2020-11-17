@@ -1,4 +1,4 @@
-// float number with exponent
+//nogo
 //
 package main
 

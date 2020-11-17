@@ -1,6 +1,6 @@
 // Pouziti: go run mycode.go ifj20.go
 // POZOR! mycode.go musi zachovat priponu go, jinak bude problem s oznacenim package jako main dle prologu v zadani.
-// Zajisteni zakladni kompatibility IFJ20->Go @ Merlin, verze 0.3
+// Zajisteni zakladni kompatibility IFJ20->Go @ Merlin, verze 0.5
 
 package main
 
@@ -10,9 +10,11 @@ import (
 	"os"
 )
 
+var __αscannerα__ = bufio.NewScanner(os.Stdin)
+
 func inputi() (int, int) {
 	var a int
-	scanner := bufio.NewScanner(os.Stdin)
+	scanner := __αscannerα__
 	scanner.Scan()
 	line := scanner.Text()
 	_, err := fmt.Sscan(line, &a)
@@ -25,7 +27,7 @@ func inputi() (int, int) {
 
 func inputf() (float64, int) {
 	var a float64
-	scanner := bufio.NewScanner(os.Stdin)
+	scanner := __αscannerα__
 	scanner.Scan()
 	line := scanner.Text()
 	_, err := fmt.Sscan(line, &a)
@@ -37,23 +39,23 @@ func inputf() (float64, int) {
 }
 
 func inputs() (string, int) {
-	var a string
-	scanner := bufio.NewScanner(os.Stdin)
+	scanner := __αscannerα__
 	ok := scanner.Scan()
 	if ok == false {
 		err := scanner.Err()
 		if err != nil {
 			return "", 1
+		} else {	// EOF
+			return scanner.Text(), 1
 		}
 	}
-	a = scanner.Text()
-	return a, 0
+	return scanner.Text(), 0
 }
 
 // inputb - podporovano v ramci rozsireni BOOLTHEN
 func inputb() (bool, int) {
 	var b bool
-	scanner := bufio.NewScanner(os.Stdin)
+	scanner := __αscannerα__
 	scanner.Scan()
 	line := scanner.Text()
 	_, err := fmt.Sscan(line, &b)   // case-insensitive načtení "true" nebo "1" dává true, vše ostatní false, chyba nastava pokud jsou na vstupu jen bílé znaky (ani jedno písmeno nebo číslice)
@@ -66,7 +68,7 @@ func inputb() (bool, int) {
 
 func substr(s string, i int, n int) (string, int) {
 	var l int = len(s)
-	if i < 0 || i > l {
+	if i < 0 || i >= l {
 		return "", 1
 	}
 
@@ -82,7 +84,7 @@ func substr(s string, i int, n int) (string, int) {
 }
 
 func ord(s string, i int) (int, int) {
-	if i < 0 || i > len(s) {
+	if i < 0 || i >= len(s) {
 		return 0, 1
 	} else {
 		return int(s[i]), 0

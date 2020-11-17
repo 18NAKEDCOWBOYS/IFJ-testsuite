@@ -11,6 +11,7 @@ import json
 import subprocess
 import signal
 import shutil
+import re
 
 # Default argument values
 DEFAULT_COMPILER_PATH = './ifj20'
@@ -34,9 +35,16 @@ EXTENSIONS = ['BOOLTHEN', 'BASE', 'FUNEXP', 'MULTIVAL', 'UNARY']
 # Global variables
 test_index = 0
 test_id = ""
+log = None
+logEnable = True
+process = None
 
-
-
+def Log (message):
+    if logEnable:
+        if log is None:
+            print(message)
+        else:
+            log.write(message + '\n')
 
 # Function to parse command line arguments
 def ParseArgs ():
@@ -57,7 +65,10 @@ def ParseArgs ():
     # Define commonly used arguments
     parser.add_argument('--compiler', '-c', default=DEFAULT_COMPILER_PATH, help='path to the IFJ20 language compiler (the IFJ project executable). default: ' + DEFAULT_COMPILER_PATH)
     parser.add_argument('--extensions', '-e', default='', help='list of implemented extensions. example: "BOOLTHEN,BASE". default: No extension implemented. options: ' + ', '.join(EXTENSIONS))
-    parser.add_argument('--log-file', '-l', default=DEFAULT_LOG_FILE, help='path to the log file created by the testsuite (if file already exists, it will be deleted). default: ' + DEFAULT_LOG_FILE)
+    group = parser.add_mutually_exclusive_group()   
+    group.add_argument('--log-file', '-lf', default=DEFAULT_LOG_FILE, help='path to the log file created by the testsuite (if file already exists, it will be deleted). default: ' + DEFAULT_LOG_FILE)
+    group.add_argument('--log-output', '-lo', action='store_true', help='print logs to the standard output instead of a file')
+    group.add_argument('--log-none', '-ln', action='store_true', help='do not print logs to output or a file')
     parser.add_argument('--timeout', '-t', default=DEFAULT_TIMEOUT, type=int, help='specify maximum timeout for each test in seconds (required to detect infinite run errors). defult = ' + str(DEFAULT_TIMEOUT))
     parser.add_argument('--output-folder', '-o', default=DEFAULT_OUTPUT_FOLDER, help='path to the folder where compiler output (IFJ20code language programs) is stored for every test that fails on interpretation or checking (if folder already exists, it will be deleted). default: ' + DEFAULT_OUTPUT_FOLDER)
 
@@ -105,7 +116,9 @@ def ParseArgs ():
     else:
         args.extensions = []
 
-    if os.path.isfile(args.log_file):
+    if args.log_output or args.log_none:
+        pass
+    elif os.path.isfile(args.log_file):
         print('removing old log file \'' + args.log_file + '\'')
         os.remove(args.log_file)
     if os.path.isdir(args.log_file):
@@ -125,7 +138,7 @@ def ParseArgs ():
     print('checking go interpreter')
     try:
         output = subprocess.check_output([args.go_interpreter, 'version'])
-    except Exception:
+    except Exception as ex:
         raise Exception('Go interpreter is not valid. Command: \'' + args.go_interpreter + ' version\' couldn\'t be executed. Reason: ' + str(ex))
     if output[:11] != 'go version ':
         raise Exception('Go interpreter is not valid. Command: \'' + args.go_interpreter + ' version\' didn\'t produce correct output')
@@ -158,6 +171,7 @@ def ProcessTests(args):
     def ProcessTestFile(path):
         result = {}
         result['name'] = path
+        result['nogo'] = False
         result['code'] = ''
         result['compiler'] = []
         result['interpret'] = []
@@ -172,6 +186,10 @@ def ProcessTests(args):
                         raise Exception('compiler pragma present multiple times in test header of test file \'' + path + '\'')
                     for item in line.split()[1:]:
                         result['compiler'].append(int(item))
+                elif line.startswith('//nogo'):
+                    if result['nogo']:
+                        raise Exception('nogo pragma present multiple times in test header of test file \'' + path + '\'')
+                    result['nogo'] = True
                 elif line.startswith('//interpret '):
                     if result['interpret'] != []:
                         raise Exception('interpret pragma present multiple times in test header of test file \'' + path + '\'')
@@ -187,19 +205,16 @@ def ProcessTests(args):
                         raise Exception('extensions- pragma present multiple times in test header of test file \'' + path + '\'')
                     for item in line.split()[1:]:
                         result['extensions-'].append(int(item))
-                elif line.startswith('//scenario '):
+                elif line.startswith('//input '):
                     scenario = line.split()
+                    if (len(scenario) != 2):
+                        raise Exception('input pragma does not contain a file')
                     inputFile = os.path.join(os.path.dirname(path), scenario[1])
                     if not os.path.isfile(inputFile):
                         raise Exception('input file \'' + inputFile + '\' in scenario test \'' + path + '\' is not valid file')
                     with open(inputFile, 'r') as inputF:
                         content = inputF.read()
-                    interpretCodes = []
-                    for item in scenarios[2:]:
-                        interpretCodes.append(int(item))
-                    if interpretCodes == []:
-                        interpretCodes.append(0)
-                    result['scenarios'].append((scenario[1], content, interpretCodes))
+                    result['scenarios'].append((scenario[1], content))
                 elif line == '//':
                     content = ''
                     while True:
@@ -235,11 +250,12 @@ def ProcessTests(args):
             for scenraio in result['scenarios']:
                 newTest = {}
                 newTest['name'] = result['name'] + '::' + scenario[0]
+                newTest['nogo'] = result['nogo']
                 newTest['code'] = result['code']
                 newTest['compiler'] = result['compiler']
                 newTest['extensions+'] = result['extensions+']
                 newTest['extensions-'] = result['extensions-']
-                newTest['interpret'] = scenario[2]
+                newTest['interpret'] = result['interpret']
                 newTest['input'] = scenario[1]
                 results.append(newTest)
         else:
@@ -268,33 +284,40 @@ def ProcessTests(args):
     print('Total tests selected: \'' + str(len(result)) + '\'')
     return result
 
-# Run test on native python interpreter
+# Run test on native go interpreter
 def RunGo(test_code, program_input, interpret, tmp_dir):
+    global process
     # Execute test on native go interpreter
     tmp_file = os.path.join(tmp_dir, TMP_GO_FILE_NAME)
     template_file = os.path.join(tmp_dir, TMP_TEMPLATE_FILE_NAME)
     with open(tmp_file, 'w') as f:
         f.write(test_code)
-    cmd = [interpret, 'run', tmp_file, template_file]
+    cmd = [interpret, 'run', template_file, tmp_file]
     process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     capture_out, capture_err = process.communicate(input=program_input)
+    return_code = process.returncode
+    process = None
     # Return info about the execution
-    return {'exit_code' : process.returncode,
+    return {'exit_code' : return_code,
             'stdout' : capture_out,
             'stderr' : capture_err}
 
 # Run test on ifj20 compiler
 def RunIfjcomp(test_code, compiler):
+    global process
     # Execute test on ifj20 compiler
     process = subprocess.Popen(compiler, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     capture_out, capture_err = process.communicate(input=test_code)
+    return_code = process.returncode
+    process = None
     # Return info about the execution
-    return {'exit_code' : process.returncode,
+    return {'exit_code' : return_code,
             'stdout' : capture_out,
             'stderr' : capture_err}
 
 # Run interpret with intermediate code
 def RunIclint(input_data, program_input, tmp_dir, interpret):
+    global process
     # Save intermediate code to file
     tmp_file = os.path.join(tmp_dir, TMP_IFJCODE_FILE_NAME)
     with open(tmp_file, 'w') as f:
@@ -303,8 +326,10 @@ def RunIclint(input_data, program_input, tmp_dir, interpret):
     cmd = [interpret, tmp_file]
     process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     capture_out, capture_err = process.communicate(input=program_input)
+    return_code = process.returncode
+    process = None
     # Return info about the execution
-    return {'exit_code' : process.returncode,
+    return {'exit_code' : return_code,
             'stdout' : capture_out,
             'stderr' : capture_err}
 
@@ -313,10 +338,10 @@ def CheckCompilerError(process_info, error_code):
     # Check for correct error code
     if process_info['exit_code'] not in error_code:
 	# Log error
-        log.write('Compiler error output:\n' + (process_info['stderr'] or '<empty>') + '\n')
-        log.write('----\n')
+        Log('Compiler error output:\n' + (process_info['stderr'] or '<empty>'))
+        Log('----')
         error = 'Unexpected exit code of IFJ compiler. Actual: ' + str(process_info['exit_code']) + ' Expected: ' + str(error_code) + '.'
-        log.write('ERROR: ' + error + '\n')
+        Log('ERROR: ' + error)
 	# Fail test
         raise RuntimeError(test_id + ' - ' + error)
 
@@ -324,40 +349,43 @@ def CheckCompilerError(process_info, error_code):
 def CheckInterpretError(process_info, error_code):
     if process_info['exit_code'] not in error_code:
 	# Log error
-        log.write('Interpret error output:\n' + (process_info['stderr'] or '<empty>') + '\n')
-        log.write('----\n')
+        Log('Interpret error output:\n' + (process_info['stderr'] or '<empty>'))
+        Log('----')
         error = 'Unexpected exit code of IFJ interpreter. Actual: ' + str(process_info['exit_code']) + ' Expected: ' + str(error_code) + '.'
-        log.write('ERROR: ' + error + '\n')
+        Log('ERROR: ' + error)
 	# Fail test
         raise RuntimeError(test_id + ' - ' + error)
 
 # Check output from native go interpreter and ifj20 interpreter
 def CheckSameOutput(interpret_info, go_info):
+    def TransformOutput(output):
+        return re.sub(r'(0x[0-9a-fA-F\.]+p\+)0([0-9])', r'\1\2', output)
+
     # Check if go and ifj20 have the save exit code
     if interpret_info['exit_code'] != go_info['exit_code']:
 	# Log error
-        log.write('Go error output:\n' + (go_info['stderr'] or '<empty>') + '\n')
-        log.write('----\n')
-        log.write('Interpret error output:\n' + (interpret_info["stderr"] or '<empty>') + '\n')
-        log.write('----\n')
+        Log('Go error output:\n' + (go_info['stderr'] or '<empty>'))
+        Log('----')
+        Log('Interpret error output:\n' + (interpret_info["stderr"] or '<empty>'))
+        Log('----')
         error = 'Go and IFJ interprets have different exit codes. Go: ' + str(go_info['exit_code']) + ' IFJ: ' + str(interpret_info['exit_code']) + '.'
-        log.write('ERROR: ' + error + '\n')
+        Log('ERROR: ' + error)
 	# Fail test
         raise RuntimeError(test_id + ' - ' + error)
 
     # Check standart output of go and ifj20
-    if interpret_info['stdout'] != go_info['stdout']:
+    if (interpret_info['stdout'] != go_info['stdout']) and (interpret_info['stdout'] != TransformOutput(go_info['stdout'])):
 	# Log error
-        log.write('Python error output:\n' + (go_info['stderr'] or '<empty>') + '\n')
-        log.write('----\n')
-        log.write('Interpret error output:\n' + (interpret_info['stderr'] or '<empty>') + '\n')
-        log.write('----\n')
-        log.write('Python output:\n' + (go_info['stdout'] or '<empty>') + '\n')
-        log.write('----\n')
-        log.write('Interpret output:\n' + (interpret_info['stdout'] or '<empty>') + '\n')
-        log.write('----\n')
-        error = 'Python and IFJ interprets have different outputs.'
-        log.write('ERROR: ' + error + '\n')
+        Log('Go error output:\n' + (go_info['stderr'] or '<empty>'))
+        Log('----')
+        Log('Interpret error output:\n' + (interpret_info['stderr'] or '<empty>'))
+        Log('----')
+        Log('Go output:\n' + (go_info['stdout'] or '<empty>'))
+        Log('----')
+        Log('Interpret output:\n' + (interpret_info['stdout'] or '<empty>'))
+        Log('----')
+        error = 'Go and IFJ interprets have different outputs.'
+        Log('ERROR: ' + error)
 	# Fail test
         raise RuntimeError(test_id + ' - ' + error)
 
@@ -377,19 +405,19 @@ def RunTest(test, args):
     test_index = test_index + 1
     test_id = test['name']
     # Log current test
-    log.write('\n********************\nTEST ' + str(test_index) + ': ' + test_id + '\n********************\n\n')
+    Log('\n********************\nTEST ' + str(test_index) + ': ' + test_id + '\n********************\n')
     if test['input'] != '':
-        log.write('PROGRAM INPUT:\n')
-        log.write(test['input'] + '\n')
-        log.write('----\n')
+        Log('PROGRAM INPUT:')
+        Log(test['input'])
+        Log('----')
     # Check extensions
     if not CheckExtensions(test['extensions+'], test['extensions-'], args.extensions):
-        log.write('test skiped due to extensions missmatch\n')
-        log.write('Required extensions: ' ' '.join(test['extensions+']) + '\n')
-        log.write('Forbiden extensions: ' ' '.join(test['extensions-']) + '\n')
-        log.write('Implemented extensions: ' ' '.join(args.extensions) + '\n')
-        log.write('----\n')
-        log.write('SKIPED\n')
+        Log('test skiped due to extensions missmatch')
+        Log('Required extensions: ' ' '.join(test['extensions+']))
+        Log('Forbiden extensions: ' ' '.join(test['extensions-']))
+        Log('Implemented extensions: ' ' '.join(args.extensions))
+        Log('----')
+        Log('SKIPED')
         return False
     # Run ifj20 compiler
     compiler_info = RunIfjcomp(test['code'], args.compiler)
@@ -399,10 +427,10 @@ def RunTest(test, args):
     if args.mode_compile_only or (compiler_info['exit_code'] != 0):
         if args.mode_compile_only and (compiler_info['exit_code'] == 0):
 	    # Log warning about incomplete testing
-            log.write('WARNING: This test was not entirely completed, because of the MODE_COMPILE testing mode.\n')
-            log.write('         Interpretation and output checks were not run.\n')
-            log.write('----\n')
-        log.write('SUCCESS\n')
+            Log('WARNING: This test was not entirely completed, because of the MODE_COMPILE testing mode.')
+            Log('         Interpretation and output checks were not run.')
+            Log('----')
+        Log('SUCCESS')
         return True
 
     # If this part fails, the intermedate code must be saved for further analysis
@@ -412,13 +440,13 @@ def RunTest(test, args):
 	# Check interpret for error
         CheckInterpretError(interpret_info, test['interpret'])
 	# End execution if tests are compile and interpret only
-        if args.mode_interpret_only or (interpret_info['exit_code'] != 0):
-            if args.mode_interpret_only and (interpret_info['exit_code'] == 0):
+        if args.mode_interpret_only or (interpret_info['exit_code'] != 0) or test['nogo']:
+            if args.mode_interpret_only and (interpret_info['exit_code'] == 0) and not test['nogo']:
 		# Log warning about incomplete testing
-                log.write('WARNING: This test was not entirely completed, because of the MODE_INTERPRET testing mode.\n')
-                log.write('         Output checks were not run.\n')
-                log.write('----\n')
-            log.write('SUCCESS\n')
+                Log('WARNING: This test was not entirely completed, because of the MODE_INTERPRET testing mode.')
+                Log('         Output checks were not run.')
+                Log('----')
+            Log('SUCCESS')
             return True
 
 	# Run test on native go interpreter and compare results with ifj20 interpreter
@@ -433,22 +461,24 @@ def RunTest(test, args):
         raise
 
     # Test successfull
-    log.write('SUCCESS\n')
+    Log('SUCCESS')
     return True
 
 def AlarmHandle(signum, frame):
-    log.write('ERROR: test timeout\n')
+    Log('ERROR: test timeout')
     raise RuntimeError("test timeout")
 
 
 
 # Main program
 
-log = None
 args = ParseArgs()
 tests = ProcessTests(args)
-print('\nTEST RESULTS:\n')
-log = open(args.log_file, 'w')
+print('\n-------- RESULTS --------\n')
+if args.log_none:
+    logEnable = False
+elif not args.log_output:
+    log = open(args.log_file, 'w')
 signal.signal(signal.SIGALRM, AlarmHandle)
 passed = 0
 failed = 0
@@ -459,6 +489,8 @@ for test in tests:
         result = RunTest(test, args)
         signal.alarm(0)
     except Exception as error:
+        if process is not None:
+            process.terminate()
         failed = failed + 1
         print(test['name'] + ': FAILED')
     else:
@@ -468,7 +500,10 @@ for test in tests:
         else:
             skiped = skiped + 1
             print(test['name'] + ': SKIPED')
-log.close()
+if log is not None:
+    log.close()
+if os.path.isdir(args.tmp_dir):
+    shutil.rmtree(args.tmp_dir)
 
 print('\n-------- SUMMARY --------\n')
 print('PASSED: ' + str(passed))

@@ -25,6 +25,7 @@ func main() {
 			vysl := 0
 			vysl = factorial(a)
 			print("Vysledek je ", vysl, "\n")
+		}
 	} else {
 		print("Chyba pri nacitani celeho cisla!\n")
 	}

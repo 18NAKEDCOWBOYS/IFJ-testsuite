@@ -1,4 +1,4 @@
-// basic zero float
+//nogo
 //
 package main
 

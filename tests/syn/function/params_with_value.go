@@ -1,5 +1,4 @@
 //compiler 2
-// function with value inside parameter
 //
 package main
 

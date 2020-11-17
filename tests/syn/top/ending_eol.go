@@ -1,4 +1,3 @@
-// program with EOLs at the end
 //
 package main
 

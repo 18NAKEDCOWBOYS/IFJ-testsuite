@@ -1,4 +1,4 @@
-// normal integer number
+//nogo
 //
 package main
 

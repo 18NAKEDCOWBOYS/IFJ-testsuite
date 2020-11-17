@@ -1,4 +1,3 @@
-// program with multiple function definitions
 //
 package main
 

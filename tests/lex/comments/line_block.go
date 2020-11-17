@@ -1,4 +1,3 @@
-// block comment nested in line comment
 //
 package main
 

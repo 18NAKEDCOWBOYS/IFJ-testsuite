@@ -1,4 +1,3 @@
-// underscore identifier
 //
 package main
 

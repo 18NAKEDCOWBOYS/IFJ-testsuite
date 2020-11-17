@@ -1,4 +1,3 @@
-// block comment on multiple lines
 //
 package main
 

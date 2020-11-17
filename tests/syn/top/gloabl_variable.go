@@ -1,5 +1,4 @@
 //compiler 2
-// program with global variable
 //
 package main
 

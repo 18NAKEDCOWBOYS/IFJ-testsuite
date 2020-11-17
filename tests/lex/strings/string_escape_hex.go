@@ -1,4 +1,4 @@
-// string with hexadecimal escape sequences
+//nogo
 //
 package main
 

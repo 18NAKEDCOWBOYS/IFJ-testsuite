@@ -1,5 +1,4 @@
 //compiler 2
-// function with identifier in returns
 //
 package main
 

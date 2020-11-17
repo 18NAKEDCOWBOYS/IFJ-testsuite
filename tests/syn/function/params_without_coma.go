@@ -1,5 +1,4 @@
 //compiler 2
-// function without coma separators between params
 //
 package main
 

@@ -1,4 +1,3 @@
-// function with empty return list
 //
 package main
 

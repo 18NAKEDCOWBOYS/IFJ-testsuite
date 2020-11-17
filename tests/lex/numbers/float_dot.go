@@ -1,4 +1,4 @@
-// normal float number
+//nogo
 //
 package main
 

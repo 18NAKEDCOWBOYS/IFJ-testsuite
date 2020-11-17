@@ -1,4 +1,4 @@
-// empty string
+//nogo
 //
 package main
 

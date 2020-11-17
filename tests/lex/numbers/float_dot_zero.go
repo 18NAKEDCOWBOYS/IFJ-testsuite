@@ -1,4 +1,4 @@
-// float number with zero after dot
+//nogo
 //
 package main
 

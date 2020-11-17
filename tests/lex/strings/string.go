@@ -1,4 +1,4 @@
-// normal string
+//nogo
 //
 package main
 

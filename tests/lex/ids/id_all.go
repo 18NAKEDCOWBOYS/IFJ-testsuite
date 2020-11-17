@@ -1,4 +1,4 @@
-// complex identifier
+//nogo
 //
 package main
 
