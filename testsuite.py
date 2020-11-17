@@ -410,7 +410,11 @@ def CheckExtensions(required, forbiden, extensions):
 
 # Save intermetiate code
 def SaveIfjcode(name, directory, data):
-        outputFileName = os.path.basename(name)[:-3] + '.ifjcode'
+        parts = name.split(':')
+        fileName = os.path.basename(parts[0])
+        if len(parts) > 1:
+            fileName += ':' + os.path.basename(parts[1])
+        outputFileName = fileName + '.ifjcode'
         f = open(os.path.join(directory, outputFileName), 'w')
         f.write(data)
         f.close()
