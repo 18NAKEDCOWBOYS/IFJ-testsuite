@@ -21,8 +21,8 @@ outputs      - Vytvořený testovacím scriptem. Obsahuje testy přeložené do 
                varování: Tento adresář se smaže při každém spuštění testovacího scriptu
 
 Použití:
-Testy spustíte vykonáním příkazu "python2 ./testsuite.py". Testovací script obsahuje celou řadu parametrů, kterými lze upravit/nastavit chování scriptu. Doporučuji seznámit se s těmito parametry pomocí spuštění scriptu s parametrem "--help".
-
+Testy spustíte vykonáním příkazu "python2 ./testsuite.py". Testovací script obsahuje celou řadu parametrů, kterými lze upravit/nastavit chování scriptu. Doporučuji seznámit se s těmito parametry pomocí spuštění scriptu s parametrem "--help". Jednotlivé testy jsou rozřazeny do složek podle typu. Pro supštění pouze konkrétních typů testů použijte parameter "--select" případně "--select-file". Dalšími užitečnými parametry jsou například "--mode-compile-only nebo --log-file"
+.
 Přidávání testů:
 Nové testy lze přidávat jednoduše vytvořením testovacího programu v novém souboru v adresáři tests (nebo jeho podadresářích). Tento nový testovací soubor musí mít koncovku .go a na začátku obsahovat testovací hlavičku, která obsahuje informace o konkrétních testovacích případech (návratové kódy, vstupy, atd.). Přesný formát hlavičky bude popsán níže. Pokud chcete poskytnout testy i ostatním studentům, vytvářejte testy v samostatných větvích gitu a poté vytvořte merge/pull request, abych mohl testy integrovat do master větve nebo mě kontaktuje přes discord "kam29#4080"
 
