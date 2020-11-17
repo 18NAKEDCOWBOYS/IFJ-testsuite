@@ -15,7 +15,7 @@ testsuite.py - Jádro testovacího programu
 ifj20.go     - soubor obsahující funkce pro umožnění interpretace jazyka IFJ20
                nativním interpretem jazyka go
 ic20int      - referenční interpret ze stránek předmětu IFJ
-log.txt      - Vytvořený testovacím scriptem. Obsahuje detailnější záznamy o proběhnlých testech.
+log          - Vytvořený testovacím scriptem. Obsahuje detailnější záznamy o proběhnlých testech.
                varování: Tento soubor se smaže při každém spuštění testovacího scriptu
 
 Adresáře:
@@ -69,5 +69,4 @@ Každý testovací soubor musí na svém začátku obsahovat hlavičku ukončeno
 	implementace žádného rozšíření pro korektní výsledek testu.
 "//input <input-file>":
 	Cesta k souboru (relativní k testu), který obsahuje vstup pro testovací program.
-	Tento řádek může být přítomný vícekrát a pro každý je vytvořen samostatný
-	testovací scénář.
+	Tento řádek může být přítomný vícekrát a pro každý je vytvořen samostatný testovací scénář.
