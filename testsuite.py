@@ -69,6 +69,8 @@ def ParseArgs ():
     group.add_argument('--log-file', '-lf', default=DEFAULT_LOG_FILE, help='path to the log file created by the testsuite (if file already exists, it will be deleted). default: ' + DEFAULT_LOG_FILE)
     group.add_argument('--log-output', '-lo', action='store_true', help='print logs to the standard output instead of a file')
     group.add_argument('--log-none', '-ln', action='store_true', help='do not print logs to output or a file')
+    parser.add_argument('--log-success-output', '-ls', action='store_true', help='log interpret output from successfull tests')
+    parser.add_argument('--save-ifjcode-all', '-a', action='store_true', help='stores compiler results (ifjcode files) for all tests (not only failed ones)')
     parser.add_argument('--timeout', '-t', default=DEFAULT_TIMEOUT, type=int, help='specify maximum timeout for each test in seconds (required to detect infinite run errors). defult = ' + str(DEFAULT_TIMEOUT))
     parser.add_argument('--output-folder', '-o', default=DEFAULT_OUTPUT_FOLDER, help='path to the folder where compiler output (IFJ20code language programs) is stored for every test that fails on interpretation or checking (if folder already exists, it will be deleted). default: ' + DEFAULT_OUTPUT_FOLDER)
 
@@ -235,21 +237,20 @@ def ProcessTests(args):
         for ext in result['extensions-']:
             if ext not in EXTENSIONS:
                 raise Exception('Unrecognized extension \'' + ext + '\' in test header of test file \'' + path + '\'')
+        if result['scenarios'] != [] and (result['compiler'] != [] or result['interpret'] != []):
+            raise Exception('invalid combination of input and compiler/interpret pragma in test header of test file \'' + path + '\'')
         if result['compiler'] == []:
             result['compiler'].append(0)
-        if result['scenarios'] != [] and len(result['compiler']) != 1 and result['compiler'][0] != 0:
-            raise Exception('compiler code must be zero in order to create scenarios in test file \'' + path + '\'')
-        if result['scenarios'] != [] and (result['compiler'] == [] or result['interpret'] == []):
-            raise Exception('invalid combination of scenarios and compiler/interpret pragma in test header of test file \'' + path + '\'')
-        if result['scenarios'] == [] and result['interpret'] == []:
+        if result['interpret'] == []:
             result['interpret'].append(0)
         if result['code'] == '':
             raise Exception('No test code loaded from test file \'' + path + '\'')
         
         if result['scenarios'] != []:
-            for scenraio in result['scenarios']:
+            results = []
+            for scenario in result['scenarios']:
                 newTest = {}
-                newTest['name'] = result['name'] + '::' + scenario[0]
+                newTest['name'] = result['name'] + ':' + scenario[0]
                 newTest['nogo'] = result['nogo']
                 newTest['code'] = result['code']
                 newTest['compiler'] = result['compiler']
@@ -266,19 +267,23 @@ def ProcessTests(args):
 
     result = []
     for item in args.select:
-        if os.path.isfile(item):
+        if os.path.isfile(item) and item.endswith('.go'):
             result += ProcessTestFile(item)
         elif os.path.isdir(item):
             for directory, _, files in os.walk(item):
                 for f in files:
-                    result += ProcessTestFile(os.path.join(directory, f))
+                    if f.endswith('.go'):
+                        result += ProcessTestFile(os.path.join(directory, f))
         else:
             raise Exception('\'' + item + '\' is not a test file or a test directory')
 
     for i in range(len(result)):
         for j in range(i+1, len(result)):
-            if os.path.basename(result[i]['name']) == os.path.basename(result[j]['name']):
-                raise Exception('Test files \'' + result[i]['name'] + '\' and \'' + result[j]['name'] + '\' have the same name')
+            split_a = result[i]['name'].split(':')
+            split_b = result[j]['name'].split(':')
+            if os.path.basename(split_a[0]) == os.path.basename(split_b[0]):
+                if len(split_a) > 1 and len(split_b) > 1 and split_a[1] == split_b[1]:
+                    raise Exception('Test files \'' + result[i]['name'] + '\' and \'' + result[j]['name'] + '\' have the same name')
 
 
     print('Total tests selected: \'' + str(len(result)) + '\'')
@@ -357,7 +362,7 @@ def CheckInterpretError(process_info, error_code):
         raise RuntimeError(test_id + ' - ' + error)
 
 # Check output from native go interpreter and ifj20 interpreter
-def CheckSameOutput(interpret_info, go_info):
+def CheckSameOutput(interpret_info, go_info, log_success):
     def TransformOutput(output):
         return re.sub(r'(0x[0-9a-fA-F\.]+p\+)0([0-9])', r'\1\2', output)
 
@@ -387,7 +392,12 @@ def CheckSameOutput(interpret_info, go_info):
         error = 'Go and IFJ interprets have different outputs.'
         Log('ERROR: ' + error)
 	# Fail test
-        raise RuntimeError(test_id + ' - ' + error)
+        raise RuntimeError(test_iid + ' - ' + error)
+    
+    # Log successfull test output
+    if log_success:
+        Log('Interpret output:\n' + (interpret_info['stdout'] or '<empty>'))
+        Log('----')
 
 def CheckExtensions(required, forbiden, extensions):
     for item in required:
@@ -397,6 +407,13 @@ def CheckExtensions(required, forbiden, extensions):
         if item in extensions:
             return False
     return True
+
+# Save intermetiate code
+def SaveIfjcode(name, directory, data):
+        outputFileName = os.path.basename(name)[:-3] + '.ifjcode'
+        f = open(os.path.join(directory, outputFileName), 'w')
+        f.write(data)
+        f.close()
 
 def RunTest(test, args):
     # Global variables must be accessed here
@@ -451,14 +468,13 @@ def RunTest(test, args):
 
 	# Run test on native go interpreter and compare results with ifj20 interpreter
         go_info = RunGo(test['code'], test['input'], args.go_interpreter, args.tmp_dir)
-        CheckSameOutput(interpret_info, go_info)
+        CheckSameOutput(interpret_info, go_info, args.log_success_output)
     except:
-	# Save intermetiate code
-        outputFileName = os.path.basename(test['name'])[:-3] + '.ifjcode'
-        f = open(os.path.join(args.output_folder, outputFileName), 'w')
-        f.write(compiler_info['stdout'])
-        f.close()
+        SaveIfjcode(test['name'], args.output_folder, compiler_info['stdout'])
         raise
+    else:
+        if args.save_ifjcode_all:
+            SaveIfjcode(test['name'], args.output_folder, compiler_info['stdout'])
 
     # Test successfull
     Log('SUCCESS')

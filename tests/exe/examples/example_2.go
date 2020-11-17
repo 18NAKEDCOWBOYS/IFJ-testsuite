@@ -1,3 +1,8 @@
+//input factorial_A.in
+//input factorial_B.in
+//input factorial_C.in
+//input factorial_D.in
+//input ../empty.in
 //
 // Program 2: Vypocet faktorialu (rekurzivne)
 package main

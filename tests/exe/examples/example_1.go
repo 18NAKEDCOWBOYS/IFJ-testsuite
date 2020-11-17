@@ -1,3 +1,8 @@
+//input factorial_A.in
+//input factorial_B.in
+//input factorial_C.in
+//input factorial_D.in
+//input ../empty.in
 //
 // Program 1: Vypocet faktorialu (iterativne)
 package main

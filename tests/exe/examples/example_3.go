@@ -1,3 +1,6 @@
+//input alphabet_A.in
+//input alphabet_B.in
+//input ../empty.in
 //
 // Program 3: Prace s retezci a vestavenymi funkcemi
 package main
