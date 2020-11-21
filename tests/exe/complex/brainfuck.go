@@ -1,3 +1,6 @@
+//input brainfuck_A.in
+//input brainfuck_B.in
+//input brainfuck_C.in
 //
 package main
 
