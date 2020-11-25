@@ -3,6 +3,7 @@
 package main
 
 func alpha (param float64) (int) {
+	return 2
 }
 
 func main () {

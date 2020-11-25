@@ -1,4 +1,3 @@
-//compiler 2
 //
 package main
 
